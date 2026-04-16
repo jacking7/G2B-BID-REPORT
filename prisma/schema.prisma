@@ -1,13 +1,92 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String            @id @default(cuid())
+  email        String            @unique
+  passwordHash String
+  name         String?
+  role         String            @default("user")
+  recipients   Recipient[]
+  keywordRules KeywordRule[]
+  schedules    ScheduleSetting[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
+model Recipient {
+  id        String   @id @default(cuid())
+  email     String
+  name      String?
+  active    Boolean  @default(true)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model KeywordRule {
+  id        String   @id @default(cuid())
+  keyword   String
+  type      String   @default("include")
+  active    Boolean  @default(true)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BidNotice {
+  id           String            @id @default(cuid())
+  bidNtceNo    String
+  bidNtceOrd   String?
+  title        String
+  organization String?
+  noticeDate   DateTime?
+  closeDate    DateTime?
+  baseAmount   Float?
+  detailUrl    String?
+  rawJson      String?
+  results      CollectedResult[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([bidNtceNo, bidNtceOrd])
+}
+
+model CollectedResult {
+  id             String    @id @default(cuid())
+  bidNoticeId    String
+  matchedKeyword String?
+  collectedAt    DateTime  @default(now())
+  emailedAt      DateTime?
+  status         String    @default("collected")
+  bidNotice      BidNotice @relation(fields: [bidNoticeId], references: [id], onDelete: Cascade)
+}
+
+model ScheduleSetting {
+  id          String   @id @default(cuid())
+  collectTime String   @default("18:00")
+  sendTime    String   @default("09:00")
+  timezone    String   @default("Asia/Seoul")
+  active      Boolean  @default(true)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MailHistory {
+  id           String   @id @default(cuid())
+  recipient    String
+  subject      String
+  sentAt       DateTime @default(now())
+  status       String
+  errorMessage String?
 }

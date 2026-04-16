@@ -1,66 +1,70 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+const overviewCards = [
+  {
+    title: "수집 일정",
+    value: "매일 18:00",
+    description: "나라장터 공고를 키워드 기준으로 수집합니다.",
+  },
+  {
+    title: "메일 발송",
+    value: "매일 09:00",
+    description: "전일 신규 공고를 요약해 수신자에게 보냅니다.",
+  },
+  {
+    title: "기본 키워드",
+    value: "AI, 인공지능, 구축, 플랫폼",
+    description: "관리 화면에서 포함/제외 키워드를 조정할 수 있습니다.",
+  },
+];
+
+const nextSteps = [
+  "Prisma 마이그레이션 생성 및 초기 데이터 시드 준비",
+  "로그인과 세션 처리 구현",
+  "나라장터 수집 API와 결과 화면 연결",
+  "엑셀 다운로드와 메일 발송 기능 추가",
+];
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="shell">
+      <section className="hero">
+        <span className="eyebrow">G2B BID REPORT</span>
+        <h1>나라장터 입찰공고 자동 수집·리포트 서비스</h1>
+        <p className="heroText">
+          키워드 기반 신규 공고를 수집하고, 결과를 웹 화면과 이메일로 정리해 주는
+          내부 업무용 대시보드 초안입니다.
+        </p>
+      </section>
+
+      <section className="grid three">
+        {overviewCards.map((card) => (
+          <article key={card.title} className="card statCard">
+            <p className="cardLabel">{card.title}</p>
+            <h2>{card.value}</h2>
+            <p className="muted">{card.description}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="grid two">
+        <article className="card">
+          <h2>핵심 기능 범위</h2>
+          <ul className="list">
+            <li>다중 사용자 로그인</li>
+            <li>키워드, 수신자, 스케줄 관리</li>
+            <li>신규 공고 저장 및 결과 조회</li>
+            <li>엑셀 다운로드 및 메일 발송</li>
+          </ul>
+        </article>
+
+        <article className="card">
+          <h2>다음 작업</h2>
+          <ol className="list ordered">
+            {nextSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </article>
+      </section>
+    </main>
   );
 }
