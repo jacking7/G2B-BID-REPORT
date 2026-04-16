@@ -17,10 +17,10 @@ const overviewCards = [
 ];
 
 const nextSteps = [
-  "Prisma 마이그레이션 생성 및 초기 데이터 시드 준비",
   "로그인과 세션 처리 구현",
   "나라장터 수집 API와 결과 화면 연결",
   "엑셀 다운로드와 메일 발송 기능 추가",
+  "설정 화면에서 키워드·수신자·스케줄 편집 지원",
 ];
 
 export default function Home() {
@@ -63,6 +63,10 @@ export default function Home() {
               <li key={step}>{step}</li>
             ))}
           </ol>
+          <p className="muted">
+            현재 DB 초기화와 연결 확인 API는 준비되었습니다. 상태 확인은
+            <code className="inlineCode"> /api/health </code>에서 가능합니다.
+          </p>
         </article>
       </section>
     </main>
