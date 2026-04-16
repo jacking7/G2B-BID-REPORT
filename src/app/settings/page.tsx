@@ -4,16 +4,18 @@ import {
   addRecipientAction,
   deleteKeywordAction,
   deleteRecipientAction,
+  saveScheduleAction,
 } from "@/app/actions/settings";
 import { KeywordManager } from "@/components/keyword-manager";
 import { LogoutButton } from "@/components/logout-button";
 import { RecipientManager } from "@/components/recipient-manager";
+import { ScheduleManager } from "@/components/schedule-manager";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function SettingsPage() {
   const user = await requireUser();
-  const [keywords, recipients] = await Promise.all([
+  const [keywords, recipients, schedule] = await Promise.all([
     prisma.keywordRule.findMany({
       where: {
         userId: user.id,
@@ -40,6 +42,20 @@ export default async function SettingsPage() {
         id: true,
         email: true,
         name: true,
+      },
+    }),
+    prisma.scheduleSetting.findFirst({
+      where: {
+        userId: user.id,
+        active: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        collectTime: true,
+        sendTime: true,
+        timezone: true,
       },
     }),
   ]);
@@ -87,12 +103,9 @@ export default async function SettingsPage() {
 
       <section className="grid two">
         <article className="card">
-          <h2>스케줄 초안</h2>
-          <ul className="list">
-            <li>수집 시간: 매일 18:00</li>
-            <li>메일 발송: 매일 09:00</li>
-            <li>시간대: Asia/Seoul</li>
-          </ul>
+          <h2>스케줄 설정</h2>
+          <ScheduleManager schedule={schedule} saveAction={saveScheduleAction} />
+          <p className="muted">현재는 사용자별 기본 수집, 발송 시간과 시간대를 저장합니다.</p>
         </article>
 
         <article className="card">

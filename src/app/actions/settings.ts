@@ -15,6 +15,11 @@ export type RecipientActionState = {
   success?: boolean;
 };
 
+export type ScheduleActionState = {
+  message?: string;
+  success?: boolean;
+};
+
 const keywordSchema = z.object({
   keyword: z
     .string()
@@ -26,6 +31,12 @@ const keywordSchema = z.object({
 const recipientSchema = z.object({
   name: z.string().trim().max(30, "이름은 30자 이하여야 합니다.").optional(),
   email: z.email("올바른 이메일 주소를 입력해주세요."),
+});
+
+const scheduleSchema = z.object({
+  collectTime: z.string().regex(/^\d{2}:\d{2}$/, "수집 시간을 확인해주세요."),
+  sendTime: z.string().regex(/^\d{2}:\d{2}$/, "발송 시간을 확인해주세요."),
+  timezone: z.string().trim().min(1, "시간대를 입력해주세요.").max(50),
 });
 
 export async function addKeywordAction(
@@ -168,4 +179,66 @@ export async function deleteRecipientAction(formData: FormData) {
   });
 
   revalidatePath("/settings");
+}
+
+export async function saveScheduleAction(
+  _state: ScheduleActionState,
+  formData: FormData,
+): Promise<ScheduleActionState> {
+  const user = await requireUser();
+
+  const validated = scheduleSchema.safeParse({
+    collectTime: formData.get("collectTime"),
+    sendTime: formData.get("sendTime"),
+    timezone: formData.get("timezone"),
+  });
+
+  if (!validated.success) {
+    return {
+      success: false,
+      message:
+        validated.error.flatten().fieldErrors.collectTime?.[0] ??
+        validated.error.flatten().fieldErrors.sendTime?.[0] ??
+        validated.error.flatten().fieldErrors.timezone?.[0],
+    };
+  }
+
+  const { collectTime, sendTime, timezone } = validated.data;
+
+  const existing = await prisma.scheduleSetting.findFirst({
+    where: {
+      userId: user.id,
+    },
+  });
+
+  if (existing) {
+    await prisma.scheduleSetting.update({
+      where: {
+        id: existing.id,
+      },
+      data: {
+        collectTime,
+        sendTime,
+        timezone,
+        active: true,
+      },
+    });
+  } else {
+    await prisma.scheduleSetting.create({
+      data: {
+        collectTime,
+        sendTime,
+        timezone,
+        active: true,
+        userId: user.id,
+      },
+    });
+  }
+
+  revalidatePath("/settings");
+
+  return {
+    success: true,
+    message: "스케줄을 저장했습니다.",
+  };
 }
