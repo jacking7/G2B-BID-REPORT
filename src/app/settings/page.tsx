@@ -1,28 +1,48 @@
 import { logoutAction } from "@/app/actions/auth";
-import { addKeywordAction, deleteKeywordAction } from "@/app/actions/settings";
+import {
+  addKeywordAction,
+  addRecipientAction,
+  deleteKeywordAction,
+  deleteRecipientAction,
+} from "@/app/actions/settings";
 import { KeywordManager } from "@/components/keyword-manager";
 import { LogoutButton } from "@/components/logout-button";
+import { RecipientManager } from "@/components/recipient-manager";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const recipientSamples = ["bca@sunyoutech.com"];
-
 export default async function SettingsPage() {
   const user = await requireUser();
-  const keywords = await prisma.keywordRule.findMany({
-    where: {
-      userId: user.id,
-      active: true,
-      type: "include",
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    select: {
-      id: true,
-      keyword: true,
-    },
-  });
+  const [keywords, recipients] = await Promise.all([
+    prisma.keywordRule.findMany({
+      where: {
+        userId: user.id,
+        active: true,
+        type: "include",
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        id: true,
+        keyword: true,
+      },
+    }),
+    prisma.recipient.findMany({
+      where: {
+        userId: user.id,
+        active: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    }),
+  ]);
 
   return (
     <main className="shell">
@@ -55,13 +75,13 @@ export default async function SettingsPage() {
         </article>
 
         <article className="card">
-          <h2>기본 수신자</h2>
-          <ul className="list">
-            {recipientSamples.map((recipient) => (
-              <li key={recipient}>{recipient}</li>
-            ))}
-          </ul>
-          <p className="muted">수신자별 활성화 여부와 이름 필드를 함께 관리할 예정입니다.</p>
+          <h2>수신자 관리</h2>
+          <RecipientManager
+            recipients={recipients}
+            addAction={addRecipientAction}
+            deleteAction={deleteRecipientAction}
+          />
+          <p className="muted">현재는 활성 수신자의 추가, 삭제만 우선 지원합니다.</p>
         </article>
       </section>
 

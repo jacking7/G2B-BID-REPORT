@@ -260,6 +260,14 @@ a {
   font-size: 0.95rem;
 }
 
+.recipientForm {
+  grid-template-columns: 1fr 1.3fr auto;
+}
+
+.compactMuted {
+  margin-top: 4px;
+}
+
 .card h2 {
   font-size: 1.25rem;
 }

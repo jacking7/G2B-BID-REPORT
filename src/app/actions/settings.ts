@@ -10,12 +10,22 @@ export type KeywordActionState = {
   success?: boolean;
 };
 
+export type RecipientActionState = {
+  message?: string;
+  success?: boolean;
+};
+
 const keywordSchema = z.object({
   keyword: z
     .string()
     .trim()
     .min(1, "키워드를 입력해주세요.")
     .max(50, "키워드는 50자 이하여야 합니다."),
+});
+
+const recipientSchema = z.object({
+  name: z.string().trim().max(30, "이름은 30자 이하여야 합니다.").optional(),
+  email: z.email("올바른 이메일 주소를 입력해주세요."),
 });
 
 export async function addKeywordAction(
@@ -78,6 +88,79 @@ export async function deleteKeywordAction(formData: FormData) {
   }
 
   await prisma.keywordRule.deleteMany({
+    where: {
+      id,
+      userId: user.id,
+    },
+  });
+
+  revalidatePath("/settings");
+}
+
+export async function addRecipientAction(
+  _state: RecipientActionState,
+  formData: FormData,
+): Promise<RecipientActionState> {
+  const user = await requireUser();
+
+  const validated = recipientSchema.safeParse({
+    name: formData.get("name") || undefined,
+    email: formData.get("email"),
+  });
+
+  if (!validated.success) {
+    return {
+      success: false,
+      message:
+        validated.error.flatten().fieldErrors.email?.[0] ??
+        validated.error.flatten().fieldErrors.name?.[0],
+    };
+  }
+
+  const email = validated.data.email;
+  const name = validated.data.name?.trim() || null;
+
+  const existing = await prisma.recipient.findFirst({
+    where: {
+      userId: user.id,
+      email,
+      active: true,
+    },
+  });
+
+  if (existing) {
+    return {
+      success: false,
+      message: "이미 등록된 수신자입니다.",
+    };
+  }
+
+  await prisma.recipient.create({
+    data: {
+      email,
+      name,
+      active: true,
+      userId: user.id,
+    },
+  });
+
+  revalidatePath("/settings");
+
+  return {
+    success: true,
+    message: "수신자를 추가했습니다.",
+  };
+}
+
+export async function deleteRecipientAction(formData: FormData) {
+  const user = await requireUser();
+  const id = formData.get("id");
+
+  if (typeof id !== "string" || !id) {
+    return;
+  }
+
+  await prisma.recipient.deleteMany({
     where: {
       id,
       userId: user.id,
