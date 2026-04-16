@@ -23,6 +23,8 @@ const nextSteps = [
   "설정 화면에서 키워드·수신자·스케줄 편집 지원",
 ];
 
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="shell">
@@ -33,6 +35,14 @@ export default function Home() {
           키워드 기반 신규 공고를 수집하고, 결과를 웹 화면과 이메일로 정리해 주는
           내부 업무용 대시보드 초안입니다.
         </p>
+        <div className="heroActions">
+          <Link href="/login" className="primaryButton linkButton">
+            로그인 시작
+          </Link>
+          <Link href="/settings" className="secondaryButton linkButton">
+            설정 화면 보기
+          </Link>
+        </div>
       </section>
 
       <section className="grid three">
