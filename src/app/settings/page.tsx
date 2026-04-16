@@ -1,12 +1,28 @@
 import { logoutAction } from "@/app/actions/auth";
+import { addKeywordAction, deleteKeywordAction } from "@/app/actions/settings";
+import { KeywordManager } from "@/components/keyword-manager";
 import { LogoutButton } from "@/components/logout-button";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-const keywordSamples = ["AI", "인공지능", "구축", "플랫폼"];
 const recipientSamples = ["bca@sunyoutech.com"];
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const keywords = await prisma.keywordRule.findMany({
+    where: {
+      userId: user.id,
+      active: true,
+      type: "include",
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    select: {
+      id: true,
+      keyword: true,
+    },
+  });
 
   return (
     <main className="shell">
@@ -29,13 +45,13 @@ export default async function SettingsPage() {
 
       <section className="grid two">
         <article className="card">
-          <h2>기본 키워드</h2>
-          <ul className="list">
-            {keywordSamples.map((keyword) => (
-              <li key={keyword}>{keyword}</li>
-            ))}
-          </ul>
-          <p className="muted">다음 단계에서 DB와 연결해 추가, 수정, 비활성화를 지원합니다.</p>
+          <h2>키워드 관리</h2>
+          <KeywordManager
+            keywords={keywords}
+            addAction={addKeywordAction}
+            deleteAction={deleteKeywordAction}
+          />
+          <p className="muted">현재는 포함 키워드의 추가, 삭제만 우선 지원합니다.</p>
         </article>
 
         <article className="card">

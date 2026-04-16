@@ -214,6 +214,52 @@ a {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.settingsSection {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.inlineForm {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+
+.inlineForm .field {
+  flex: 1;
+}
+
+.settingsList {
+  padding-left: 0;
+  list-style: none;
+}
+
+.settingsListItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.smallButton {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+}
+
+.successText {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.95rem;
+}
+
 .card h2 {
   font-size: 1.25rem;
 }
@@ -271,5 +317,12 @@ a {
   .hero,
   .card {
     padding: 20px;
+  }
+
+  .inlineForm,
+  .settingsListItem,
+  .settingsHero {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
