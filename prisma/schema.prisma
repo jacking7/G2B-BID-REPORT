@@ -16,6 +16,7 @@ model User {
   keywordRules     KeywordRule[]
   schedules        ScheduleSetting[]
   collectedResults CollectedResult[]
+  mailHistories    MailHistory[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
@@ -89,9 +90,13 @@ model ScheduleSetting {
 
 model MailHistory {
   id           String   @id @default(cuid())
+  userId       String
   recipient    String
   subject      String
   sentAt       DateTime @default(now())
   status       String
   errorMessage String?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, sentAt])
 }

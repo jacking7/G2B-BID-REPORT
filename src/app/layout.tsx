@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ensureSchedulerStarted } from "@/lib/scheduler";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,11 +18,13 @@ export const metadata: Metadata = {
   description: "나라장터 입찰공고 자동 수집·메일 발송 서비스",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  ensureSchedulerStarted();
+
   return (
     <html lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>{children}</body>

@@ -115,11 +115,11 @@ export default async function SettingsPage() {
         </article>
 
         <article className="card">
-          <h2>다음 연결 작업</h2>
+          <h2>운영 메모</h2>
           <ol className="list ordered">
-            <li>제외 키워드와 결과 필터 추가</li>
-            <li>실제 나라장터 수집기 연결</li>
-            <li>엑셀 다운로드와 메일 발송 연동</li>
+            <li>결과 화면에서 Excel 다운로드와 수동 메일 발송 가능</li>
+            <li>SMTP 설정 시 첨부 Excel 포함 메일 발송</li>
+            <li>ENABLE_INTERNAL_SCHEDULER=true 이면 저장된 시간 기준 자동 실행</li>
           </ol>
         </article>
       </section>

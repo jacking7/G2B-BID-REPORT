@@ -335,7 +335,7 @@ a {
 .resultsTable {
   width: 100%;
   border-collapse: collapse;
-  min-width: 860px;
+  min-width: 980px;
 }
 
 .resultsTable th,
@@ -359,6 +359,10 @@ a {
 
 .resultsTable a {
   color: var(--primary);
+}
+
+.compactActions {
+  margin-top: 0;
 }
 
 @media (max-width: 900px) {
