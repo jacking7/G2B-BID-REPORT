@@ -42,6 +42,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# accidental local sqlite artifacts
+/prisma/*.db
+
 # local secrets
 .env
 .env.*

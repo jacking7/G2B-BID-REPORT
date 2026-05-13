@@ -3,12 +3,20 @@ import { PrismaClient } from "@prisma/client";
 import path from "node:path";
 
 const connectionString = process.env.DATABASE_URL ?? "file:./dev.db";
-const sqlitePath = connectionString.replace(/^file:/, "");
-const dbPath = path.isAbsolute(sqlitePath)
-  ? sqlitePath
-  : path.join(process.cwd(), "prisma", path.basename(sqlitePath));
 
-const adapter = new PrismaBetterSqlite3({ url: dbPath });
+function resolveSqlitePath(url: string) {
+  const sqlitePath = url.replace(/^file:/, "");
+
+  if (path.isAbsolute(sqlitePath)) {
+    return sqlitePath;
+  }
+
+  return path.resolve(/* turbopackIgnore: true */ process.cwd(), sqlitePath);
+}
+
+const adapter = new PrismaBetterSqlite3({
+  url: resolveSqlitePath(connectionString),
+});
 
 declare global {
   var prisma: PrismaClient | undefined;
