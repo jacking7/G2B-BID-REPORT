@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { logoutAction } from "@/app/actions/auth";
 import {
   addKeywordAction,
@@ -67,9 +68,14 @@ export default async function SettingsPage() {
           <span className="eyebrow">SETTINGS</span>
           <h1>운영 설정 초안</h1>
           <p className="heroText">
-            로그인한 사용자만 접근 가능한 기본 설정 화면입니다. 다음 단계에서는
-            실제 저장 기능과 CRUD를 붙이면 됩니다.
+            로그인한 사용자만 접근 가능한 기본 설정 화면입니다. 키워드와 수신자,
+            스케줄을 저장한 뒤 결과 화면에서 수집 결과를 바로 확인할 수 있습니다.
           </p>
+          <div className="heroActions">
+            <Link href="/results" className="secondaryButton linkButton">
+              결과 화면으로 이동
+            </Link>
+          </div>
         </div>
         <div className="settingsHeroSide">
           <p className="cardLabel">현재 로그인</p>
@@ -111,9 +117,9 @@ export default async function SettingsPage() {
         <article className="card">
           <h2>다음 연결 작업</h2>
           <ol className="list ordered">
-            <li>키워드, 수신자, 스케줄 CRUD API</li>
-            <li>설정 저장 폼과 서버 액션 연결</li>
-            <li>나라장터 수집기와 결과 화면 연동</li>
+            <li>제외 키워드와 결과 필터 추가</li>
+            <li>실제 나라장터 수집기 연결</li>
+            <li>엑셀 다운로드와 메일 발송 연동</li>
           </ol>
         </article>
       </section>

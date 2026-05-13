@@ -17,10 +17,10 @@ const overviewCards = [
 ];
 
 const nextSteps = [
-  "로그인과 세션 처리 구현",
-  "나라장터 수집 API와 결과 화면 연결",
+  "실제 나라장터 수집 API 또는 스크래퍼 연결",
   "엑셀 다운로드와 메일 발송 기능 추가",
-  "설정 화면에서 키워드·수신자·스케줄 편집 지원",
+  "설정 화면 고도화와 제외 키워드 지원",
+  "자동 스케줄러 연결 및 운영 배치 구성",
 ];
 
 import Link from "next/link";
@@ -41,6 +41,9 @@ export default function Home() {
           </Link>
           <Link href="/settings" className="secondaryButton linkButton">
             설정 화면 보기
+          </Link>
+          <Link href="/results" className="ghostButton linkButton">
+            결과 화면 보기
           </Link>
         </div>
       </section>

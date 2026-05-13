@@ -7,16 +7,17 @@ datasource db {
 }
 
 model User {
-  id           String            @id @default(cuid())
-  email        String            @unique
-  passwordHash String
-  name         String?
-  role         String            @default("user")
-  recipients   Recipient[]
-  keywordRules KeywordRule[]
-  schedules    ScheduleSetting[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String
+  name             String?
+  role             String            @default("user")
+  recipients       Recipient[]
+  keywordRules     KeywordRule[]
+  schedules        ScheduleSetting[]
+  collectedResults CollectedResult[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model Recipient {
@@ -62,11 +63,16 @@ model BidNotice {
 model CollectedResult {
   id             String    @id @default(cuid())
   bidNoticeId    String
+  userId         String
   matchedKeyword String?
   collectedAt    DateTime  @default(now())
   emailedAt      DateTime?
   status         String    @default("collected")
   bidNotice      BidNotice @relation(fields: [bidNoticeId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, collectedAt])
+  @@unique([bidNoticeId, userId])
 }
 
 model ScheduleSetting {
