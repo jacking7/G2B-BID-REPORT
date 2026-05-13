@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { collectSampleBidNotices } from "@/lib/bid-collector";
+import { collectBidNotices } from "@/lib/bid-collector";
 
 export type CollectActionState = {
   message?: string;
@@ -15,7 +15,7 @@ export async function collectBidNoticesAction(
   void state;
 
   const user = await requireUser();
-  const result = await collectSampleBidNotices(user.id);
+  const result = await collectBidNotices(user.id);
 
   revalidatePath("/results");
 
@@ -30,7 +30,7 @@ export async function collectBidNoticesAction(
     success: true,
     message:
       result.importedCount > 0
-        ? `수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다.`
-        : `수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 건수는 ${result.totalMatches}건입니다.`,
+        ? `수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다. (${result.source === "live" ? "실제 수집" : "샘플 대체"})`
+        : `수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 건수는 ${result.totalMatches}건입니다. (${result.source === "live" ? "실제 수집" : "샘플 대체"})`,
   };
 }

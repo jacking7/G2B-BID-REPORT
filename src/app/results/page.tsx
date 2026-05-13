@@ -56,8 +56,8 @@ export default async function ResultsPage() {
           <span className="eyebrow">RESULTS</span>
           <h1>수집 결과</h1>
           <p className="heroText">
-            현재는 저장된 샘플 공고를 기준으로 사용자 키워드 매칭 결과를 확인할 수 있습니다.
-            다음 단계에서 실제 나라장터 API 또는 수집 스크립트와 연결하면 됩니다.
+            사용자 키워드를 기준으로 공고를 수집하고 저장된 결과를 확인합니다.
+            현재는 g2bplus 공개 화면 스크래핑을 우선 연결했고, 실패 시에만 샘플 데이터로 대체합니다.
           </p>
           <div className="heroActions">
             <Link href="/settings" className="secondaryButton linkButton">
@@ -81,7 +81,7 @@ export default async function ResultsPage() {
         <article className="card">
           <h2>수동 수집</h2>
           <p className="muted">
-            샘플 데이터 기준으로 키워드 매칭을 실행합니다. 중복 공고는 다시 저장하지 않습니다.
+            실제 수집을 먼저 시도하고, 실행 불가할 때만 샘플 데이터로 대체합니다. 중복 공고는 다시 저장하지 않습니다.
           </p>
           <CollectBidsButton action={collectBidNoticesAction} />
         </article>

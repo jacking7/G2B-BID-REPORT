@@ -16,7 +16,7 @@ export function CollectBidsButton({ action }: CollectBidsButtonProps) {
     <div className="settingsSection">
       <form action={formAction}>
         <button type="submit" className="primaryButton" disabled={pending}>
-          {pending ? "수집 중..." : "샘플 수집 실행"}
+          {pending ? "수집 중..." : "실제 수집 실행"}
         </button>
       </form>
 
