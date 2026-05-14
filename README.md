@@ -15,6 +15,7 @@
 
 ## 실행 방법
 ```bash
+cp .env.example .env
 npm install
 npm run db:migrate
 npm run dev
@@ -44,6 +45,8 @@ INTERNAL_JOB_TOKEN=change-me
 - `npm run db:generate`: Prisma Client 생성
 - `npm run db:migrate`: 배포용 마이그레이션 적용
 - `npm run db:push`: 스키마를 DB에 바로 반영
+- `npm run job:collect`: 외부 작업 엔드포인트로 수집 실행
+- `npm run job:send`: 외부 작업 엔드포인트로 메일 발송 실행
 
 ## 헬스 체크
 `GET /api/health`
@@ -85,7 +88,18 @@ Authorization: Bearer $INTERNAL_JOB_TOKEN
 
 단일 사용자만 실행하려면 JSON body에 `userId`를 포함하면 됩니다.
 
+간단한 호출 예시:
+```bash
+export INTERNAL_JOB_TOKEN='your-token'
+./scripts/run-job.sh http://localhost:3000 collect
+./scripts/run-job.sh http://localhost:3000 send
+```
+
+## 배포 전 점검
+- `.env.example`을 기준으로 `.env` 준비
+- `docs/DEPLOY_CHECKLIST.md` 순서대로 확인
+
 ## 다음 작업 후보
 - 메일 템플릿 고도화와 실패 사유 분류
 - 관리자 대시보드와 수집 통계 추가
-- 외부 worker 배포 스크립트 정리
+- Postgres 전환과 운영 백업 자동화

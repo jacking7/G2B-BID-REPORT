@@ -9,7 +9,9 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "job:collect": "bash ./scripts/run-job.sh ${APP_BASE_URL:-http://localhost:3000} collect",
+    "job:send": "bash ./scripts/run-job.sh ${APP_BASE_URL:-http://localhost:3000} send"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.7.0",
