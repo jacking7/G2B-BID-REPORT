@@ -19,12 +19,20 @@ export default async function ResultsPage({
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const status = typeof params.status === "string" ? params.status : "all";
   const keyword = typeof params.keyword === "string" ? params.keyword.trim() : "";
+  const from = typeof params.from === "string" ? params.from : "";
+  const to = typeof params.to === "string" ? params.to : "";
+
+  const collectedAtFilter = {
+    ...(from ? { gte: new Date(`${from}T00:00:00`) } : {}),
+    ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+  };
 
   const resultWhere = {
     userId: user.id,
     ...(status === "pending" ? { emailedAt: null } : {}),
     ...(status === "emailed" ? { emailedAt: { not: null } } : {}),
     ...(keyword ? { matchedKeyword: { contains: keyword } } : {}),
+    ...(from || to ? { collectedAt: collectedAtFilter } : {}),
     ...(query
       ? {
           OR: [
@@ -37,7 +45,7 @@ export default async function ResultsPage({
       : {}),
   };
 
-  const [results, keywordCount, excludeKeywordCount, recipientCount, pendingMailCount, mailHistories, schedule] = await Promise.all([
+  const [results, keywordCount, excludeKeywordCount, recipientCount, pendingMailCount, mailHistories, schedule, retryableMailCount] = await Promise.all([
     prisma.collectedResult.findMany({
       where: resultWhere,
       orderBy: {
@@ -91,6 +99,14 @@ export default async function ResultsPage({
         updatedAt: "desc",
       },
     }),
+    prisma.mailHistory.count({
+      where: {
+        userId: user.id,
+        status: {
+          in: ["failed", "skipped"],
+        },
+      },
+    }),
   ]);
 
   return (
@@ -132,6 +148,9 @@ export default async function ResultsPage({
           </p>
           <CollectBidsButton action={collectBidNoticesAction} />
           <SendReportButton action={sendBidReportAction} />
+          {retryableMailCount > 0 ? (
+            <SendReportButton action={sendBidReportAction} label={`메일 재시도 (${retryableMailCount}건 이력)`} />
+          ) : null}
           <div className="heroActions compactActions">
             <a href="/api/results/export" className="ghostButton linkButton">
               Excel 다운로드
@@ -144,6 +163,7 @@ export default async function ResultsPage({
           <ul className="list">
             <li>현재 필터 기준 결과 수: {results.length}건</li>
             <li>미발송 결과 수: {pendingMailCount}건</li>
+            <li>메일 재시도 가능 이력 수: {retryableMailCount}건</li>
             <li>활성 수신자 수: {recipientCount}명</li>
             <li>사용자별 키워드 매칭 결과 분리 저장</li>
           </ul>
@@ -154,13 +174,15 @@ export default async function ResultsPage({
         <div className="resultsHeader">
           <div>
             <h2>결과 필터</h2>
-            <p className="muted compactMuted">검색어, 발송 상태, 매칭 키워드로 좁혀볼 수 있습니다.</p>
+            <p className="muted compactMuted">검색어, 발송 상태, 매칭 키워드, 수집 날짜 범위로 좁혀볼 수 있습니다.</p>
           </div>
         </div>
         <ResultsFilterForm
           initialQuery={query}
           initialStatus={status}
           initialKeyword={keyword}
+          initialFrom={from}
+          initialTo={to}
         />
       </section>
 

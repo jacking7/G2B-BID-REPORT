@@ -1,3 +1,13 @@
+export function formatDate(value: Date | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    dateStyle: "medium",
+  }).format(value);
+}
+
 export function formatDateTime(value: Date | null) {
   if (!value) {
     return "-";

@@ -30,10 +30,12 @@ SMTP_USER=bot@example.com
 SMTP_PASS=app-password
 MAIL_FROM=bot@example.com
 ENABLE_INTERNAL_SCHEDULER=true
+INTERNAL_JOB_TOKEN=change-me
 ```
 
 - SMTP 설정이 없으면 메일은 실제 발송하지 않고, 발송 이력에 `skipped` 상태만 남깁니다.
 - `ENABLE_INTERNAL_SCHEDULER=true` 일 때만 앱 프로세스 내부에서 매분 스케줄을 확인합니다.
+- `INTERNAL_JOB_TOKEN`을 설정하면 외부 cron/worker가 보호된 작업 엔드포인트를 호출할 수 있습니다.
 
 ## 주요 스크립트
 - `npm run dev`: 개발 서버 실행
@@ -66,11 +68,24 @@ ENABLE_INTERNAL_SCHEDULER=true
 `DATABASE_URL=file:./dev.db` 기준으로 런타임과 Prisma CLI가 같은 파일을 바라보도록 맞춰두었습니다.
 
 ## 주요 화면/동작
-- `/settings`: 키워드, 수신자, 수집/발송 시간 설정
-- `/results`: 수동 수집, Excel 다운로드, 신규 결과 메일 발송, 발송 이력 확인
+- `/settings`: 포함/제외 키워드, 수신자, 수집/발송 시간 설정
+- `/results`: 수동 수집, 날짜/상태/키워드 필터, Excel 다운로드, 신규 결과 메일 발송, 메일 재시도, 발송 이력 확인
 - `/api/results/export`: 로그인 사용자 기준 Excel 파일 다운로드
 
+## 외부 cron/worker 연동
+내부 스케줄러 대신 외부 cron에서 아래 엔드포인트를 호출할 수 있습니다.
+
+- `POST /api/jobs/collect`
+- `POST /api/jobs/send`
+
+헤더 예시:
+```bash
+Authorization: Bearer $INTERNAL_JOB_TOKEN
+```
+
+단일 사용자만 실행하려면 JSON body에 `userId`를 포함하면 됩니다.
+
 ## 다음 작업 후보
-- 제외 키워드와 상세 필터 추가
-- 외부 배치/워커로 스케줄러 분리
-- 메일 템플릿 고도화와 실패 재시도
+- 메일 템플릿 고도화와 실패 사유 분류
+- 관리자 대시보드와 수집 통계 추가
+- 외부 worker 배포 스크립트 정리

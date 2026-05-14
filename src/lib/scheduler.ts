@@ -28,10 +28,11 @@ function getCurrentTimeParts(timezone: string) {
   };
 }
 
-async function runScheduledJobs() {
-  const settings = await prisma.scheduleSetting.findMany({
+async function getActiveSchedules(userId?: string) {
+  return prisma.scheduleSetting.findMany({
     where: {
       active: true,
+      ...(userId ? { userId } : {}),
     },
     select: {
       userId: true,
@@ -40,7 +41,44 @@ async function runScheduledJobs() {
       timezone: true,
     },
   });
+}
 
+export async function runCollectionJobs(options?: { userId?: string }) {
+  const settings = await getActiveSchedules(options?.userId);
+  let processed = 0;
+  let imported = 0;
+
+  for (const setting of settings) {
+    const result = await collectBidNotices(setting.userId);
+    processed += 1;
+    imported += result.importedCount;
+  }
+
+  return {
+    processedUsers: processed,
+    importedCount: imported,
+  };
+}
+
+export async function runSendJobs(options?: { userId?: string }) {
+  const settings = await getActiveSchedules(options?.userId);
+  let processed = 0;
+  let sentRecipients = 0;
+
+  for (const setting of settings) {
+    const result = await sendPendingReport(setting.userId);
+    processed += 1;
+    sentRecipients += result.sentCount;
+  }
+
+  return {
+    processedUsers: processed,
+    sentRecipients,
+  };
+}
+
+async function runScheduledJobs() {
+  const settings = await getActiveSchedules();
   const minuteKeys = globalForScheduler.g2bSchedulerMinuteKeys ?? new Set<string>();
   globalForScheduler.g2bSchedulerMinuteKeys = minuteKeys;
 

@@ -2,12 +2,16 @@ type ResultsFilterFormProps = {
   initialQuery: string;
   initialStatus: string;
   initialKeyword: string;
+  initialFrom: string;
+  initialTo: string;
 };
 
 export function ResultsFilterForm({
   initialQuery,
   initialStatus,
   initialKeyword,
+  initialFrom,
+  initialTo,
 }: ResultsFilterFormProps) {
   return (
     <form className="filterForm" method="get">
@@ -38,6 +42,16 @@ export function ResultsFilterForm({
           defaultValue={initialKeyword}
           placeholder="예: AI"
         />
+      </label>
+
+      <label className="field">
+        <span>시작일</span>
+        <input type="date" name="from" defaultValue={initialFrom} />
+      </label>
+
+      <label className="field">
+        <span>종료일</span>
+        <input type="date" name="to" defaultValue={initialTo} />
       </label>
 
       <div className="filterActions">
