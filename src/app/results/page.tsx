@@ -2,20 +2,44 @@ import Link from "next/link";
 import { collectBidNoticesAction, sendBidReportAction } from "@/app/actions/bids";
 import { CollectBidsButton } from "@/components/collect-bids-button";
 import { LogoutButton } from "@/components/logout-button";
+import { ResultsFilterForm } from "@/components/results-filter-form";
 import { SendReportButton } from "@/components/send-report-button";
 import { logoutAction } from "@/app/actions/auth";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
-export default async function ResultsPage() {
+export default async function ResultsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const user = await requireUser();
+  const params = (await searchParams) ?? {};
+  const query = typeof params.q === "string" ? params.q.trim() : "";
+  const status = typeof params.status === "string" ? params.status : "all";
+  const keyword = typeof params.keyword === "string" ? params.keyword.trim() : "";
 
-  const [results, keywordCount, recipientCount, pendingMailCount, mailHistories] = await Promise.all([
+  const resultWhere = {
+    userId: user.id,
+    ...(status === "pending" ? { emailedAt: null } : {}),
+    ...(status === "emailed" ? { emailedAt: { not: null } } : {}),
+    ...(keyword ? { matchedKeyword: { contains: keyword } } : {}),
+    ...(query
+      ? {
+          OR: [
+            { matchedKeyword: { contains: query } },
+            { bidNotice: { title: { contains: query } } },
+            { bidNotice: { organization: { contains: query } } },
+            { bidNotice: { bidNtceNo: { contains: query } } },
+          ],
+        }
+      : {}),
+  };
+
+  const [results, keywordCount, excludeKeywordCount, recipientCount, pendingMailCount, mailHistories, schedule] = await Promise.all([
     prisma.collectedResult.findMany({
-      where: {
-        userId: user.id,
-      },
+      where: resultWhere,
       orderBy: {
         collectedAt: "desc",
       },
@@ -28,6 +52,13 @@ export default async function ResultsPage() {
         userId: user.id,
         active: true,
         type: "include",
+      },
+    }),
+    prisma.keywordRule.count({
+      where: {
+        userId: user.id,
+        active: true,
+        type: "exclude",
       },
     }),
     prisma.recipient.count({
@@ -50,6 +81,15 @@ export default async function ResultsPage() {
         sentAt: "desc",
       },
       take: 10,
+    }),
+    prisma.scheduleSetting.findFirst({
+      where: {
+        userId: user.id,
+        active: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
     }),
   ]);
 
@@ -76,7 +116,10 @@ export default async function ResultsPage() {
         <div className="settingsHeroSide">
           <p className="cardLabel">현재 로그인</p>
           <strong>{user.name ?? user.email}</strong>
-          <span className="muted compactMuted">활성 키워드 {keywordCount}개</span>
+          <span className="muted compactMuted">포함 키워드 {keywordCount}개, 제외 키워드 {excludeKeywordCount}개</span>
+          <span className="muted compactMuted">
+            스케줄러 {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}
+          </span>
           <LogoutButton action={logoutAction} />
         </div>
       </section>
@@ -99,12 +142,41 @@ export default async function ResultsPage() {
         <article className="card">
           <h2>현재 상태</h2>
           <ul className="list">
-            <li>저장된 결과 수: {results.length}건</li>
+            <li>현재 필터 기준 결과 수: {results.length}건</li>
             <li>미발송 결과 수: {pendingMailCount}건</li>
             <li>활성 수신자 수: {recipientCount}명</li>
             <li>사용자별 키워드 매칭 결과 분리 저장</li>
           </ul>
         </article>
+      </section>
+
+      <section className="card resultsCard">
+        <div className="resultsHeader">
+          <div>
+            <h2>결과 필터</h2>
+            <p className="muted compactMuted">검색어, 발송 상태, 매칭 키워드로 좁혀볼 수 있습니다.</p>
+          </div>
+        </div>
+        <ResultsFilterForm
+          initialQuery={query}
+          initialStatus={status}
+          initialKeyword={keyword}
+        />
+      </section>
+
+      <section className="card resultsCard">
+        <div className="resultsHeader">
+          <div>
+            <h2>자동 실행 상태</h2>
+            <p className="muted compactMuted">현재 저장된 시간 기준으로 자동 수집, 발송 여부를 확인합니다.</p>
+          </div>
+        </div>
+        <ul className="list">
+          <li>내부 스케줄러: {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}</li>
+          <li>수집 시간: {schedule?.collectTime ?? "미설정"}</li>
+          <li>발송 시간: {schedule?.sendTime ?? "미설정"}</li>
+          <li>시간대: {schedule?.timezone ?? "미설정"}</li>
+        </ul>
       </section>
 
       <section className="card resultsCard">

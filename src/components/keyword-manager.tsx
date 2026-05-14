@@ -4,6 +4,10 @@ import { useActionState } from "react";
 import type { KeywordActionState } from "@/app/actions/settings";
 
 type KeywordManagerProps = {
+  title: string;
+  description: string;
+  type: "include" | "exclude";
+  emptyMessage: string;
   keywords: Array<{
     id: string;
     keyword: string;
@@ -18,6 +22,10 @@ type KeywordManagerProps = {
 const initialState: KeywordActionState = {};
 
 export function KeywordManager({
+  title,
+  description,
+  type,
+  emptyMessage,
   keywords,
   addAction,
   deleteAction,
@@ -26,13 +34,19 @@ export function KeywordManager({
 
   return (
     <div className="settingsSection">
+      <div>
+        <h3>{title}</h3>
+        <p className="muted compactMuted">{description}</p>
+      </div>
+
       <form action={formAction} className="inlineForm">
+        <input type="hidden" name="type" value={type} />
         <label className="field">
-          <span>키워드 추가</span>
+          <span>{type === "include" ? "포함 키워드 추가" : "제외 키워드 추가"}</span>
           <input
             type="text"
             name="keyword"
-            placeholder="예: 클라우드, 데이터, AI"
+            placeholder={type === "include" ? "예: 클라우드, 데이터, AI" : "예: 유지보수, 단순 구매"}
             required
           />
         </label>
@@ -59,7 +73,7 @@ export function KeywordManager({
             </li>
           ))
         ) : (
-          <li>등록된 키워드가 없습니다.</li>
+          <li>{emptyMessage}</li>
         )}
       </ul>
     </div>

@@ -26,6 +26,7 @@ const keywordSchema = z.object({
     .trim()
     .min(1, "키워드를 입력해주세요.")
     .max(50, "키워드는 50자 이하여야 합니다."),
+  type: z.enum(["include", "exclude"]).default("include"),
 });
 
 const recipientSchema = z.object({
@@ -47,6 +48,7 @@ export async function addKeywordAction(
 
   const validated = keywordSchema.safeParse({
     keyword: formData.get("keyword"),
+    type: formData.get("type") ?? "include",
   });
 
   if (!validated.success) {
@@ -56,12 +58,13 @@ export async function addKeywordAction(
     };
   }
 
-  const keyword = validated.data.keyword;
+  const { keyword, type } = validated.data;
 
   const existing = await prisma.keywordRule.findFirst({
     where: {
       userId: user.id,
       keyword,
+      type,
       active: true,
     },
   });
@@ -76,7 +79,7 @@ export async function addKeywordAction(
   await prisma.keywordRule.create({
     data: {
       keyword,
-      type: "include",
+      type,
       active: true,
       userId: user.id,
     },
@@ -86,7 +89,7 @@ export async function addKeywordAction(
 
   return {
     success: true,
-    message: "키워드를 추가했습니다.",
+    message: type === "include" ? "포함 키워드를 추가했습니다." : "제외 키워드를 추가했습니다.",
   };
 }
 

@@ -124,19 +124,27 @@ export async function collectBidNotices(userId: string) {
     where: {
       userId,
       active: true,
-      type: "include",
     },
     select: {
       keyword: true,
+      type: true,
     },
   });
 
-  const keywords = keywordRules.map((item) => item.keyword.trim()).filter(Boolean);
+  const includeKeywords = keywordRules
+    .filter((item) => item.type === "include")
+    .map((item) => item.keyword.trim())
+    .filter(Boolean);
+  const excludeKeywords = keywordRules
+    .filter((item) => item.type === "exclude")
+    .map((item) => item.keyword.trim())
+    .filter(Boolean);
 
-  if (keywords.length === 0) {
+  if (includeKeywords.length === 0) {
     return {
       importedCount: 0,
       totalMatches: 0,
+      excludedCount: 0,
       keywords: [],
       source: "sample" as const,
     };
@@ -146,13 +154,24 @@ export async function collectBidNotices(userId: string) {
 
   let importedCount = 0;
   let totalMatches = 0;
+  let excludedCount = 0;
 
   for (const notice of notices) {
-    const matchedKeyword = keywords.find((keyword) =>
-      normalize(notice.title).includes(normalize(keyword)),
+    const noticeText = `${notice.title} ${notice.organization ?? ""}`;
+    const matchedKeyword = includeKeywords.find((keyword) =>
+      normalize(noticeText).includes(normalize(keyword)),
     );
 
     if (!matchedKeyword) {
+      continue;
+    }
+
+    const blockedKeyword = excludeKeywords.find((keyword) =>
+      normalize(noticeText).includes(normalize(keyword)),
+    );
+
+    if (blockedKeyword) {
+      excludedCount += 1;
       continue;
     }
 
@@ -216,7 +235,8 @@ export async function collectBidNotices(userId: string) {
   return {
     importedCount,
     totalMatches,
-    keywords,
+    keywords: includeKeywords,
+    excludedCount,
     source,
   };
 }
