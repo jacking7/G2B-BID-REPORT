@@ -9,6 +9,29 @@ import { prisma } from "@/lib/prisma";
 const sessionCookieName = "g2b_session";
 const devSessionSecret = "dev-only-auth-secret-change-me";
 
+function shouldUseSecureCookies() {
+  const configured = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
+
+  if (configured === "true" || configured === "1" || configured === "yes") {
+    return true;
+  }
+
+  if (configured === "false" || configured === "0" || configured === "no") {
+    return false;
+  }
+
+  const appBaseUrl = process.env.APP_BASE_URL;
+  if (appBaseUrl) {
+    try {
+      return new URL(appBaseUrl).protocol === "https:";
+    } catch {
+      return process.env.NODE_ENV === "production";
+    }
+  }
+
+  return process.env.NODE_ENV === "production";
+}
+
 function getSessionSecret() {
   const secret = process.env.AUTH_SECRET;
 
@@ -126,7 +149,7 @@ export async function createSession(user: AuthUser) {
   const cookieStore = await cookies();
   cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     sameSite: "lax",
     expires,
     path: "/",
