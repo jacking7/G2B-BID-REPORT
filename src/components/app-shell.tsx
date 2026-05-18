@@ -15,7 +15,6 @@ type AppShellProps = {
 };
 
 const navItems = [
-  { href: "/settings", label: "설정", key: "settings" },
   { href: "/results", label: "공고 목록", key: "results" },
 ] as const;
 
@@ -59,6 +58,14 @@ export function AppShell({
           </div>
           <div className="topActions">
             <ThemeToggle />
+            <Link
+              href="/settings"
+              className={active === "settings" ? "iconButton active" : "iconButton"}
+              aria-label="설정"
+              title="설정"
+            >
+              <span aria-hidden="true">⚙</span>
+            </Link>
             <div className="userBadge">
               <span>{user.name ?? user.email}</span>
               <small>{user.role}</small>
@@ -69,7 +76,7 @@ export function AppShell({
 
         <main className="consoleMain">
           <div className="breadcrumbs">
-            <Link href="/settings">G2B</Link>
+            <Link href="/results">G2B</Link>
             <span>/</span>
             <span>{active === "settings" ? "설정" : "공고 목록"}</span>
           </div>

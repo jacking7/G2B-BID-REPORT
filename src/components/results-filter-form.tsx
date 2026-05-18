@@ -4,6 +4,7 @@ type ResultsFilterFormProps = {
   initialKeyword: string;
   initialFrom: string;
   initialTo: string;
+  today: string;
 };
 
 export function ResultsFilterForm({
@@ -12,6 +13,7 @@ export function ResultsFilterForm({
   initialKeyword,
   initialFrom,
   initialTo,
+  today,
 }: ResultsFilterFormProps) {
   return (
     <form className="filterForm" method="get">
@@ -58,6 +60,9 @@ export function ResultsFilterForm({
         <button type="submit" className="primaryButton">
           필터 적용
         </button>
+        <a href={`/results?from=${today}&to=${today}`} className="secondaryButton linkButton">
+          오늘 기준
+        </a>
         <a href="/results" className="ghostButton linkButton">
           초기화
         </a>

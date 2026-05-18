@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { collectBidNoticesAction, sendBidReportAction } from "@/app/actions/bids";
 import { AppShell } from "@/components/app-shell";
 import { CollectBidsButton } from "@/components/collect-bids-button";
@@ -10,6 +9,26 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+function getKoreanDateInputValue(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function isDateInputValue(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function getKoreanDateBounds(value: string) {
+  return {
+    start: new Date(`${value}T00:00:00+09:00`),
+    end: new Date(`${value}T23:59:59.999+09:00`),
+  };
+}
+
 export default async function ResultsPage({
   searchParams,
 }: {
@@ -20,12 +39,17 @@ export default async function ResultsPage({
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const status = typeof params.status === "string" ? params.status : "all";
   const keyword = typeof params.keyword === "string" ? params.keyword.trim() : "";
-  const from = typeof params.from === "string" ? params.from : "";
-  const to = typeof params.to === "string" ? params.to : "";
+  const today = getKoreanDateInputValue();
+  const requestedFrom = typeof params.from === "string" ? params.from : "";
+  const requestedTo = typeof params.to === "string" ? params.to : "";
+  const from = isDateInputValue(requestedFrom) ? requestedFrom : today;
+  const to = isDateInputValue(requestedTo) ? requestedTo : today;
+  const fromBounds = getKoreanDateBounds(from);
+  const toBounds = getKoreanDateBounds(to);
 
   const collectedAtFilter = {
-    ...(from ? { gte: new Date(`${from}T00:00:00`) } : {}),
-    ...(to ? { lte: new Date(`${to}T23:59:59`) } : {}),
+    gte: fromBounds.start,
+    lte: toBounds.end,
   };
 
   const resultWhere = {
@@ -33,7 +57,7 @@ export default async function ResultsPage({
     ...(status === "pending" ? { emailedAt: null } : {}),
     ...(status === "emailed" ? { emailedAt: { not: null } } : {}),
     ...(keyword ? { matchedKeyword: { contains: keyword } } : {}),
-    ...(from || to ? { collectedAt: collectedAtFilter } : {}),
+    collectedAt: collectedAtFilter,
     ...(query
       ? {
           OR: [
@@ -118,9 +142,6 @@ export default async function ResultsPage({
       description="키워드 기준으로 수집된 나라장터 공고와 메일 발송 상태를 확인합니다."
       actions={
         <>
-          <Link href="/settings" className="secondaryButton linkButton">
-            설정
-          </Link>
           <a href="/api/results/export" className="primaryButton linkButton">
             Excel 다운로드
           </a>
@@ -189,7 +210,7 @@ export default async function ResultsPage({
         <div className="panelHeader">
           <div>
             <h2>결과 필터</h2>
-            <p>검색어, 발송 상태, 매칭 키워드, 수집 날짜 범위로 좁혀볼 수 있습니다.</p>
+            <p>기본값은 KST 오늘 기준입니다. 시작일과 종료일을 바꾸면 원하는 날짜 범위로 조회합니다.</p>
           </div>
         </div>
         <ResultsFilterForm
@@ -198,6 +219,7 @@ export default async function ResultsPage({
           initialKeyword={keyword}
           initialFrom={from}
           initialTo={to}
+          today={today}
         />
       </section>
 
