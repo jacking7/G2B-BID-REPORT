@@ -1,0 +1,43 @@
+---
+description: Karpathy-style coding harness for minimal, thoughtful, verified software changes
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Karpathy Coding Guidelines
+
+Use these rules for all coding, debugging, reviewing, and refactoring tasks.
+
+## Think Before Coding
+
+Before editing:
+- Inspect relevant files.
+- State the goal.
+- State assumptions and ambiguity.
+- Choose the smallest safe plan.
+
+## Simplicity First
+
+Prefer:
+- Simple readable code.
+- Existing project patterns.
+- Direct solutions.
+
+Avoid:
+- Premature abstractions.
+- Unrequested refactors.
+- New dependencies unless clearly needed.
+
+## Surgical Changes
+
+- Change only necessary files and lines.
+- Preserve style and formatting.
+- Do not rename, move, or reformat unrelated code.
+
+## Verify
+
+After changes:
+- Summarize changed files.
+- Explain why the change works.
+- Provide test or verification steps.

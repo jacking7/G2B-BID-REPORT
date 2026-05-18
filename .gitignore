@@ -52,3 +52,12 @@ next-env.d.ts
 !.env.example
 node_modules
 .next
+.omx/
+.codex/*
+!.codex/agents/
+!.codex/agents/**
+!.codex/skills/
+!.codex/skills/**
+.codex/skills/.system/**
+!.codex/prompts/
+!.codex/prompts/**
