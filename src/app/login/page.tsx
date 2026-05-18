@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 
 export default async function LoginPage() {
@@ -11,18 +12,20 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="shell authShell">
-      <section className="authIntro card">
-        <span className="eyebrow">AUTH</span>
-        <h1>로그인 및 관리자 계정 생성</h1>
-        <p className="heroText">
-          초기에는 내부 운영 용도로 간단한 이메일, 비밀번호 인증을 사용합니다.
-          첫 관리자 계정 생성 후 설정 화면으로 이동할 수 있습니다.
-        </p>
+    <main className="authShell">
+      <section className="authIntro">
+        <div>
+          <span className="eyebrow">G2B BID REPORT</span>
+          <h1>운영 콘솔 로그인</h1>
+          <p>
+            키워드, 수신자, 수집 결과를 관리하는 내부 업무 콘솔입니다.
+          </p>
+        </div>
+        <ThemeToggle />
       </section>
 
       <section className="grid two authGrid">
-        <article className="card">
+        <article className="consolePanel">
           <AuthForm
             title="로그인"
             description="이미 생성된 계정으로 로그인합니다."
@@ -45,7 +48,7 @@ export default async function LoginPage() {
           />
         </article>
 
-        <article className="card">
+        <article className="consolePanel">
           <AuthForm
             title="첫 관리자 계정 생성"
             description="아직 계정이 없다면 여기서 바로 생성할 수 있습니다."

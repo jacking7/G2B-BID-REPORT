@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -86,11 +87,7 @@ export async function addKeywordAction(
   });
 
   revalidatePath("/settings");
-
-  return {
-    success: true,
-    message: type === "include" ? "포함 키워드를 추가했습니다." : "제외 키워드를 추가했습니다.",
-  };
+  redirect("/settings");
 }
 
 export async function deleteKeywordAction(formData: FormData) {
@@ -109,6 +106,7 @@ export async function deleteKeywordAction(formData: FormData) {
   });
 
   revalidatePath("/settings");
+  redirect("/settings");
 }
 
 export async function addRecipientAction(
@@ -159,11 +157,7 @@ export async function addRecipientAction(
   });
 
   revalidatePath("/settings");
-
-  return {
-    success: true,
-    message: "수신자를 추가했습니다.",
-  };
+  redirect("/settings");
 }
 
 export async function deleteRecipientAction(formData: FormData) {
@@ -182,6 +176,7 @@ export async function deleteRecipientAction(formData: FormData) {
   });
 
   revalidatePath("/settings");
+  redirect("/settings");
 }
 
 export async function saveScheduleAction(
@@ -239,9 +234,5 @@ export async function saveScheduleAction(
   }
 
   revalidatePath("/settings");
-
-  return {
-    success: true,
-    message: "스케줄을 저장했습니다.",
-  };
+  redirect("/settings");
 }

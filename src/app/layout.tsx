@@ -18,6 +18,17 @@ export const metadata: Metadata = {
   description: "나라장터 입찰공고 자동 수집·메일 발송 서비스",
 };
 
+const themeScript = `
+(() => {
+  try {
+    const stored = window.localStorage.getItem("g2b-theme");
+    document.documentElement.dataset.theme = stored === "light" ? "light" : "dracula";
+  } catch {
+    document.documentElement.dataset.theme = "dracula";
+  }
+})();
+`;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -26,8 +37,16 @@ export default async function RootLayout({
   ensureSchedulerStarted();
 
   return (
-    <html lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="ko"
+      className={`${geistSans.variable} ${geistMono.variable}`}
+      data-theme="dracula"
+      suppressHydrationWarning
+    >
+      <body>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        {children}
+      </body>
     </html>
   );
 }

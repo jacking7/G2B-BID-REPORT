@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { collectBidNoticesAction, sendBidReportAction } from "@/app/actions/bids";
+import { AppShell } from "@/components/app-shell";
 import { CollectBidsButton } from "@/components/collect-bids-button";
-import { LogoutButton } from "@/components/logout-button";
 import { ResultsFilterForm } from "@/components/results-filter-form";
 import { SendReportButton } from "@/components/send-report-button";
-import { logoutAction } from "@/app/actions/auth";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export default async function ResultsPage({
   searchParams,
@@ -110,74 +111,85 @@ export default async function ResultsPage({
   ]);
 
   return (
-    <main className="shell">
-      <section className="hero settingsHero">
-        <div>
-          <span className="eyebrow">RESULTS</span>
-          <h1>수집 결과</h1>
-          <p className="heroText">
-            사용자 키워드를 기준으로 공고를 수집하고 저장된 결과를 확인합니다.
-            현재는 g2bplus 공개 화면 스크래핑을 우선 연결했고, 실패 시에만 샘플 데이터로 대체합니다.
-          </p>
-          <div className="heroActions">
-            <Link href="/settings" className="secondaryButton linkButton">
-              설정으로 이동
-            </Link>
-            <Link href="/" className="ghostButton linkButton">
-              홈으로 이동
-            </Link>
-          </div>
-        </div>
-
-        <div className="settingsHeroSide">
-          <p className="cardLabel">현재 로그인</p>
-          <strong>{user.name ?? user.email}</strong>
-          <span className="muted compactMuted">포함 키워드 {keywordCount}개, 제외 키워드 {excludeKeywordCount}개</span>
-          <span className="muted compactMuted">
-            스케줄러 {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}
-          </span>
-          <LogoutButton action={logoutAction} />
-        </div>
+    <AppShell
+      active="results"
+      user={user}
+      title="공고 목록"
+      description="키워드 기준으로 수집된 나라장터 공고와 메일 발송 상태를 확인합니다."
+      actions={
+        <>
+          <Link href="/settings" className="secondaryButton linkButton">
+            설정
+          </Link>
+          <a href="/api/results/export" className="primaryButton linkButton">
+            Excel 다운로드
+          </a>
+        </>
+      }
+    >
+      <section className="metricGrid">
+        <article className="metricTile">
+          <span>현재 필터 결과</span>
+          <strong>{results.length}</strong>
+        </article>
+        <article className="metricTile">
+          <span>미발송</span>
+          <strong>{pendingMailCount}</strong>
+        </article>
+        <article className="metricTile">
+          <span>활성 수신자</span>
+          <strong>{recipientCount}</strong>
+        </article>
+        <article className="metricTile">
+          <span>포함/제외 키워드</span>
+          <strong>
+            {keywordCount}/{excludeKeywordCount}
+          </strong>
+        </article>
       </section>
 
-      <section className="grid two">
-        <article className="card">
-          <h2>수동 작업</h2>
-          <p className="muted">
-            실제 수집을 먼저 시도하고, 실행 불가할 때만 샘플 데이터로 대체합니다. 메일은 아직 미발송 결과만 첨부 Excel과 함께 보냅니다.
-          </p>
-          <CollectBidsButton action={collectBidNoticesAction} />
-          <SendReportButton action={sendBidReportAction} />
+      <section className="consoleGrid two">
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>수동 작업</h2>
+              <p>수집 실행 후 미발송 결과를 Excel 첨부 메일로 보냅니다.</p>
+            </div>
+          </div>
+          <div className="actionStrip">
+            <CollectBidsButton action={collectBidNoticesAction} />
+            <SendReportButton action={sendBidReportAction} />
+          </div>
           {pendingMailCount > 0 && retryableMailCount > 0 ? (
             <p className="muted compactMuted">
               이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 미발송 {pendingMailCount}건은 위
               발송 버튼으로 다시 보낼 수 있습니다.
             </p>
           ) : null}
-          <div className="heroActions compactActions">
-            <a href="/api/results/export" className="ghostButton linkButton">
-              Excel 다운로드
-            </a>
-          </div>
         </article>
 
-        <article className="card">
-          <h2>현재 상태</h2>
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>자동 실행 상태</h2>
+              <p>저장된 사용자별 수집/발송 시간을 표시합니다.</p>
+            </div>
+          </div>
           <ul className="list">
-            <li>현재 필터 기준 결과 수: {results.length}건</li>
-            <li>미발송 결과 수: {pendingMailCount}건</li>
+            <li>내부 스케줄러: {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}</li>
+            <li>수집 시간: {schedule?.collectTime ?? "미설정"}</li>
+            <li>발송 시간: {schedule?.sendTime ?? "미설정"}</li>
+            <li>시간대: {schedule?.timezone ?? "미설정"}</li>
             <li>메일 재시도 가능 이력 수: {retryableMailCount}건</li>
-            <li>활성 수신자 수: {recipientCount}명</li>
-            <li>사용자별 키워드 매칭 결과 분리 저장</li>
           </ul>
         </article>
       </section>
 
-      <section className="card resultsCard">
-        <div className="resultsHeader">
+      <section className="consolePanel">
+        <div className="panelHeader">
           <div>
             <h2>결과 필터</h2>
-            <p className="muted compactMuted">검색어, 발송 상태, 매칭 키워드, 수집 날짜 범위로 좁혀볼 수 있습니다.</p>
+            <p>검색어, 발송 상태, 매칭 키워드, 수집 날짜 범위로 좁혀볼 수 있습니다.</p>
           </div>
         </div>
         <ResultsFilterForm
@@ -189,30 +201,12 @@ export default async function ResultsPage({
         />
       </section>
 
-      <section className="card resultsCard">
-        <div className="resultsHeader">
-          <div>
-            <h2>자동 실행 상태</h2>
-            <p className="muted compactMuted">현재 저장된 시간 기준으로 자동 수집, 발송 여부를 확인합니다.</p>
-          </div>
-        </div>
-        <ul className="list">
-          <li>내부 스케줄러: {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}</li>
-          <li>수집 시간: {schedule?.collectTime ?? "미설정"}</li>
-          <li>발송 시간: {schedule?.sendTime ?? "미설정"}</li>
-          <li>시간대: {schedule?.timezone ?? "미설정"}</li>
-        </ul>
-      </section>
-
-      <section className="card resultsCard">
-        <div className="resultsHeader">
+      <section className="consolePanel resultsCard">
+        <div className="panelHeader">
           <div>
             <h2>공고 목록</h2>
-            <p className="muted compactMuted">최신 수집 순으로 표시합니다.</p>
+            <p>최신 수집 순으로 표시합니다.</p>
           </div>
-          <a href="/api/results/export" className="secondaryButton linkButton">
-            Excel 다운로드
-          </a>
         </div>
 
         {results.length > 0 ? (
@@ -259,11 +253,11 @@ export default async function ResultsPage({
         )}
       </section>
 
-      <section className="card resultsCard">
-        <div className="resultsHeader">
+      <section className="consolePanel resultsCard">
+        <div className="panelHeader">
           <div>
             <h2>메일 발송 이력</h2>
-            <p className="muted compactMuted">최근 10건을 표시합니다.</p>
+            <p>최근 10건을 표시합니다.</p>
           </div>
         </div>
 
@@ -296,6 +290,6 @@ export default async function ResultsPage({
           <p className="muted">아직 메일 발송 이력이 없습니다.</p>
         )}
       </section>
-    </main>
+    </AppShell>
   );
 }

@@ -1,0 +1,90 @@
+import Link from "next/link";
+import type { ReactNode } from "react";
+import { logoutAction } from "@/app/actions/auth";
+import { LogoutButton } from "@/components/logout-button";
+import { ThemeToggle } from "@/components/theme-toggle";
+import type { AuthUser } from "@/lib/auth";
+
+type AppShellProps = {
+  active: "settings" | "results";
+  title: string;
+  description: string;
+  user: AuthUser;
+  actions?: ReactNode;
+  children: ReactNode;
+};
+
+const navItems = [
+  { href: "/settings", label: "설정", key: "settings" },
+  { href: "/results", label: "공고 목록", key: "results" },
+] as const;
+
+export function AppShell({
+  active,
+  title,
+  description,
+  user,
+  actions,
+  children,
+}: AppShellProps) {
+  return (
+    <div className="appShell">
+      <aside className="sideNav">
+        <div className="brandBlock">
+          <span className="brandMark">G2B</span>
+          <div>
+            <strong>Bid Report</strong>
+            <span>나라장터 자동 리포트</span>
+          </div>
+        </div>
+
+        <nav aria-label="주요 메뉴">
+          {navItems.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              className={item.key === active ? "active" : ""}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="appFrame">
+        <header className="topBar">
+          <div className="topSearch" aria-label="현재 서비스">
+            <span>G2B</span>
+            <strong>입찰공고 운영 콘솔</strong>
+          </div>
+          <div className="topActions">
+            <ThemeToggle />
+            <div className="userBadge">
+              <span>{user.name ?? user.email}</span>
+              <small>{user.role}</small>
+            </div>
+            <LogoutButton action={logoutAction} />
+          </div>
+        </header>
+
+        <main className="consoleMain">
+          <div className="breadcrumbs">
+            <Link href="/settings">G2B</Link>
+            <span>/</span>
+            <span>{active === "settings" ? "설정" : "공고 목록"}</span>
+          </div>
+
+          <section className="pageHeader">
+            <div>
+              <h1>{title}</h1>
+              <p>{description}</p>
+            </div>
+            {actions ? <div className="pageActions">{actions}</div> : null}
+          </section>
+
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}

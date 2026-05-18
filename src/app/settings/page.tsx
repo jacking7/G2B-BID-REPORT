@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { logoutAction } from "@/app/actions/auth";
 import {
   addKeywordAction,
   addRecipientAction,
@@ -7,12 +5,14 @@ import {
   deleteRecipientAction,
   saveScheduleAction,
 } from "@/app/actions/settings";
+import { AppShell } from "@/components/app-shell";
 import { KeywordManager } from "@/components/keyword-manager";
-import { LogoutButton } from "@/components/logout-button";
 import { RecipientManager } from "@/components/recipient-manager";
 import { ScheduleManager } from "@/components/schedule-manager";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await requireUser();
@@ -76,32 +76,20 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <main className="shell">
-      <section className="hero settingsHero">
-        <div>
-          <span className="eyebrow">SETTINGS</span>
-          <h1>운영 설정 초안</h1>
-          <p className="heroText">
-            로그인한 사용자만 접근 가능한 기본 설정 화면입니다. 키워드와 수신자,
-            스케줄을 저장한 뒤 결과 화면에서 수집 결과를 바로 확인할 수 있습니다.
-          </p>
-          <div className="heroActions">
-            <Link href="/results" className="secondaryButton linkButton">
-              결과 화면으로 이동
-            </Link>
+    <AppShell
+      active="settings"
+      user={user}
+      title="운영 설정"
+      description="키워드, 수신자, 스케줄을 한 화면에서 관리합니다."
+    >
+      <section className="consoleGrid two">
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>키워드 관리</h2>
+              <p>포함/제외 규칙은 저장 즉시 다음 수집에 반영됩니다.</p>
+            </div>
           </div>
-        </div>
-        <div className="settingsHeroSide">
-          <p className="cardLabel">현재 로그인</p>
-          <strong>{user.name ?? user.email}</strong>
-          <span className="muted">권한: {user.role}</span>
-          <LogoutButton action={logoutAction} />
-        </div>
-      </section>
-
-      <section className="grid two">
-        <article className="card">
-          <h2>키워드 관리</h2>
           <KeywordManager
             title="포함 키워드"
             description="공고명, 기관명에 이 키워드가 포함되면 수집 대상으로 봅니다."
@@ -122,26 +110,39 @@ export default async function SettingsPage() {
           />
         </article>
 
-        <article className="card">
-          <h2>수신자 관리</h2>
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>수신자 관리</h2>
+              <p>메일 리포트를 받을 활성 수신자를 관리합니다.</p>
+            </div>
+          </div>
           <RecipientManager
             recipients={recipients}
             addAction={addRecipientAction}
             deleteAction={deleteRecipientAction}
           />
-          <p className="muted">현재는 활성 수신자의 추가, 삭제만 우선 지원합니다.</p>
         </article>
       </section>
 
-      <section className="grid two">
-        <article className="card">
-          <h2>스케줄 설정</h2>
+      <section className="consoleGrid two">
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>스케줄 설정</h2>
+              <p>한국 시간 기준 기본 수집/발송 시간을 저장합니다.</p>
+            </div>
+          </div>
           <ScheduleManager schedule={schedule} saveAction={saveScheduleAction} />
-          <p className="muted">현재는 사용자별 기본 수집, 발송 시간과 시간대를 저장합니다.</p>
         </article>
 
-        <article className="card">
-          <h2>운영 메모</h2>
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>운영 메모</h2>
+              <p>현재 자동화 설정과 주의사항입니다.</p>
+            </div>
+          </div>
           <ol className="list ordered">
             <li>결과 화면에서 검색어, 발송 상태, 매칭 키워드 필터 가능</li>
             <li>포함, 제외 키워드를 함께 관리 가능</li>
@@ -149,6 +150,6 @@ export default async function SettingsPage() {
           </ol>
         </article>
       </section>
-    </main>
+    </AppShell>
   );
 }
