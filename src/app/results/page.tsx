@@ -1,8 +1,7 @@
 import { collectBidNoticesAction, sendBidReportAction } from "@/app/actions/bids";
 import { AppShell } from "@/components/app-shell";
-import { CollectBidsButton } from "@/components/collect-bids-button";
+import { ManualActions } from "@/components/manual-actions";
 import { ResultsFilterForm } from "@/components/results-filter-form";
-import { SendReportButton } from "@/components/send-report-button";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -177,10 +176,10 @@ export default async function ResultsPage({
               <p>수집 실행 후 미발송 결과를 Excel 첨부 메일로 보냅니다.</p>
             </div>
           </div>
-          <div className="actionStrip">
-            <CollectBidsButton action={collectBidNoticesAction} />
-            <SendReportButton action={sendBidReportAction} />
-          </div>
+          <ManualActions
+            collectAction={collectBidNoticesAction}
+            sendAction={sendBidReportAction}
+          />
           {pendingMailCount > 0 && retryableMailCount > 0 ? (
             <p className="muted compactMuted">
               이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 미발송 {pendingMailCount}건은 위

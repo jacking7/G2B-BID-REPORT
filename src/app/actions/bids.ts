@@ -28,7 +28,7 @@ export async function collectBidNoticesAction(
   if (result.keywords.length === 0) {
     return {
       success: false,
-      message: "먼저 설정 화면에서 포함 키워드를 1개 이상 등록해주세요.",
+      message: "상단 톱니바퀴 설정에서 포함 키워드를 1개 이상 등록해주세요.",
     };
   }
 

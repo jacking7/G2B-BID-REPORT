@@ -196,8 +196,7 @@ a {
 .topActions,
 .pageActions,
 .heroActions,
-.filterActions,
-.actionStrip {
+.filterActions {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -494,6 +493,24 @@ a {
   align-items: end;
 }
 
+.manualActions {
+  display: grid;
+  gap: 12px;
+}
+
+.manualActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.manualActionMessages {
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+}
+
 .primaryButton,
 .secondaryButton,
 .ghostButton,
@@ -655,10 +672,6 @@ a {
   font-weight: 800;
 }
 
-.actionStrip .settingsSection {
-  margin-top: 0;
-}
-
 @media (max-width: 1100px) {
   .appShell {
     grid-template-columns: 1fr;
@@ -714,7 +727,7 @@ a {
   .topActions,
   .pageActions,
   .filterActions,
-  .actionStrip {
+  .manualActionButtons {
     align-items: stretch;
     flex-direction: column;
   }
@@ -722,7 +735,8 @@ a {
   .topActions > *,
   .pageActions > *,
   .filterActions > *,
-  .actionStrip > * {
+  .manualActionButtons > *,
+  .manualActionButtons button {
     width: 100%;
   }
 }
