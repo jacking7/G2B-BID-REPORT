@@ -88,6 +88,33 @@ function toDate(value: string | null | undefined) {
   return value ? new Date(value) : null;
 }
 
+function getKoreanTodayBounds(date = new Date()) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const today = formatter.format(date);
+
+  return {
+    start: new Date(`${today}T00:00:00+09:00`),
+    end: new Date(`${today}T23:59:59.999+09:00`),
+  };
+}
+
+function isNoticeOpenToday(notice: ScrapedBidNotice | SampleBidNotice) {
+  const noticeDate = toDate(notice.noticeDate);
+  const closeDate = toDate(notice.closeDate);
+
+  if (!noticeDate || !closeDate) {
+    return false;
+  }
+
+  const { start, end } = getKoreanTodayBounds();
+  return noticeDate <= end && closeDate >= start;
+}
+
 async function scrapeLiveBidNotices() {
   const scriptPath = path.join(process.cwd(), "scripts", "collect-g2bplus.cjs");
   const { stdout } = await execFileAsync(process.execPath, [scriptPath], {
@@ -157,6 +184,10 @@ export async function collectBidNotices(userId: string) {
   let excludedCount = 0;
 
   for (const notice of notices) {
+    if (!isNoticeOpenToday(notice)) {
+      continue;
+    }
+
     const noticeText = `${notice.title} ${notice.organization ?? ""}`;
     const matchedKeyword = includeKeywords.find((keyword) =>
       normalize(noticeText).includes(normalize(keyword)),
