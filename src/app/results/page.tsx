@@ -148,8 +148,11 @@ export default async function ResultsPage({
           </p>
           <CollectBidsButton action={collectBidNoticesAction} />
           <SendReportButton action={sendBidReportAction} />
-          {retryableMailCount > 0 ? (
-            <SendReportButton action={sendBidReportAction} label={`메일 재시도 (${retryableMailCount}건 이력)`} />
+          {pendingMailCount > 0 && retryableMailCount > 0 ? (
+            <p className="muted compactMuted">
+              이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 미발송 {pendingMailCount}건은 위
+              발송 버튼으로 다시 보낼 수 있습니다.
+            </p>
           ) : null}
           <div className="heroActions compactActions">
             <a href="/api/results/export" className="ghostButton linkButton">

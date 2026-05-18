@@ -3,22 +3,35 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const userCount = await prisma.user.count();
-    const keywordCount = await prisma.keywordRule.count();
-    const recipientCount = await prisma.recipient.count();
+    await prisma.user.count();
 
-    return Response.json({
+    const url = new URL(request.url);
+    const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    const jobToken = process.env.INTERNAL_JOB_TOKEN;
+    const includeCounts =
+      url.searchParams.get("detailed") === "1" &&
+      Boolean(jobToken) &&
+      token === jobToken;
+
+    const payload: Record<string, unknown> = {
       ok: true,
       database: "connected",
-      counts: {
-        users: userCount,
-        keywords: keywordCount,
-        recipients: recipientCount,
-      },
       checkedAt: new Date().toISOString(),
-    });
+    };
+
+    if (includeCounts) {
+      const [users, keywords, recipients] = await Promise.all([
+        prisma.user.count(),
+        prisma.keywordRule.count(),
+        prisma.recipient.count(),
+      ]);
+
+      payload.counts = { users, keywords, recipients };
+    }
+
+    return Response.json(payload);
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

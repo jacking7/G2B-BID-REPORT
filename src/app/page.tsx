@@ -17,10 +17,10 @@ const overviewCards = [
 ];
 
 const nextSteps = [
-  "실제 나라장터 수집 API 또는 스크래퍼 연결",
-  "엑셀 다운로드와 메일 발송 기능 추가",
-  "설정 화면 고도화와 제외 키워드 지원",
-  "자동 스케줄러 연결 및 운영 배치 구성",
+  "운영 서버에 SMTP·AUTH_SECRET·INTERNAL_JOB_TOKEN 설정",
+  "배포 후 `npm run playwright:install`로 Chromium 설치",
+  "외부 cron으로 /api/jobs/collect·send 호출 구성",
+  "g2bplus 스크래퍼 DOM 변경 시 scripts/collect-g2bplus.cjs 점검",
 ];
 
 import Link from "next/link";

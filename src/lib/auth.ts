@@ -7,8 +7,23 @@ import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 
 const sessionCookieName = "g2b_session";
-const sessionSecret = process.env.AUTH_SECRET ?? "dev-only-auth-secret-change-me";
-const sessionKey = new TextEncoder().encode(sessionSecret);
+const devSessionSecret = "dev-only-auth-secret-change-me";
+
+function getSessionSecret() {
+  const secret = process.env.AUTH_SECRET;
+
+  if (!secret || secret === devSessionSecret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET 환경변수를 프로덕션에 설정해주세요.");
+    }
+
+    return devSessionSecret;
+  }
+
+  return secret;
+}
+
+const sessionKey = new TextEncoder().encode(getSessionSecret());
 
 type SessionPayload = {
   userId: string;

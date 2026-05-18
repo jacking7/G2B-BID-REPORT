@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const protectedRoutes = ["/settings"];
+const protectedRoutes = ["/settings", "/results"];
 const authRoutes = ["/login"];
 const sessionCookieName = "g2b_session";
 

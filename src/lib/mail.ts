@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
-import { buildReportHtml, buildResultsWorkbook, getPendingResultsForUser } from "@/lib/report";
+import {
+  buildReportHtml,
+  buildResultsWorkbookFromResults,
+  getPendingResultsForUser,
+} from "@/lib/report";
 import { getTodayDateLabel } from "@/lib/format";
 
 function getMailConfig() {
@@ -82,7 +86,7 @@ export async function sendPendingReport(userId: string) {
     auth: config.auth,
   });
 
-  const workbook = await buildResultsWorkbook(userId);
+  const workbook = buildResultsWorkbookFromResults(results);
   const subject = `[G2B] ${getTodayDateLabel()} 신규 공고 ${results.length}건`;
   const html = buildReportHtml({
     userName: user.name ?? user.email,
@@ -129,7 +133,9 @@ export async function sendPendingReport(userId: string) {
     }
   }
 
-  if (sentCount > 0) {
+  const allRecipientsSent = sentCount === recipients.length;
+
+  if (allRecipientsSent) {
     await prisma.collectedResult.updateMany({
       where: {
         id: {
@@ -144,10 +150,11 @@ export async function sendPendingReport(userId: string) {
   }
 
   return {
-    success: sentCount > 0,
-    message:
-      sentCount > 0
-        ? `${sentCount}개 수신자에게 메일을 발송했습니다.`
+    success: allRecipientsSent,
+    message: allRecipientsSent
+      ? `${sentCount}개 수신자에게 메일을 발송했습니다.`
+      : sentCount > 0
+        ? `${sentCount}/${recipients.length}명에게만 발송됐습니다. 미발송 공고는 그대로 두었으니 설정·이력을 확인한 뒤 다시 발송해주세요.`
         : "메일 발송에 실패했습니다. 이력을 확인해주세요.",
     sentCount,
   };
