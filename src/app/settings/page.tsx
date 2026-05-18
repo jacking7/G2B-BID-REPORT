@@ -125,7 +125,7 @@ export default async function SettingsPage() {
         </article>
       </section>
 
-      <section className="consoleGrid two">
+      <section className="consoleGrid">
         <article className="consolePanel">
           <div className="panelHeader">
             <div>
@@ -134,20 +134,6 @@ export default async function SettingsPage() {
             </div>
           </div>
           <ScheduleManager schedule={schedule} saveAction={saveScheduleAction} />
-        </article>
-
-        <article className="consolePanel">
-          <div className="panelHeader">
-            <div>
-              <h2>운영 메모</h2>
-              <p>현재 자동화 설정과 주의사항입니다.</p>
-            </div>
-          </div>
-          <ol className="list ordered">
-            <li>결과 화면에서 검색어, 발송 상태, 매칭 키워드 필터 가능</li>
-            <li>포함, 제외 키워드를 함께 관리 가능</li>
-            <li>ENABLE_INTERNAL_SCHEDULER=true 이면 저장된 시간 기준 자동 실행</li>
-          </ol>
         </article>
       </section>
     </AppShell>
