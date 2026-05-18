@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import { LogoutButton } from "@/components/logout-button";
+import { SidebarCollapseButton } from "@/components/sidebar-collapse-button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { AuthUser } from "@/lib/auth";
 
@@ -15,7 +16,7 @@ type AppShellProps = {
 };
 
 const navItems = [
-  { href: "/results", label: "공고 목록", key: "results" },
+  { href: "/results", label: "공고 목록", shortLabel: "공고", key: "results" },
 ] as const;
 
 export function AppShell({
@@ -31,10 +32,11 @@ export function AppShell({
       <aside className="sideNav">
         <div className="brandBlock">
           <span className="brandMark">G2B</span>
-          <div>
+          <div className="brandText">
             <strong>Bid Report</strong>
             <span>나라장터 자동 리포트</span>
           </div>
+          <SidebarCollapseButton />
         </div>
 
         <nav aria-label="주요 메뉴">
@@ -44,7 +46,8 @@ export function AppShell({
               href={item.href}
               className={item.key === active ? "active" : ""}
             >
-              {item.label}
+              <span className="navLabel">{item.label}</span>
+              <span className="navShortLabel">{item.shortLabel}</span>
             </Link>
           ))}
         </nav>

@@ -92,6 +92,7 @@ a {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
+  transition: grid-template-columns 160ms ease;
 }
 
 .sideNav {
@@ -104,6 +105,10 @@ a {
   padding: 18px 14px;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
+  overflow: hidden;
+  transition:
+    padding 160ms ease,
+    width 160ms ease;
 }
 
 .brandBlock {
@@ -112,6 +117,10 @@ a {
   gap: 10px;
   min-height: 44px;
   padding: 0 8px;
+}
+
+.brandText {
+  min-width: 0;
 }
 
 .brandMark {
@@ -138,6 +147,31 @@ a {
   font-size: 12px;
 }
 
+.sidebarToggle {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.sidebarToggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.sidebarToggle span {
+  font-size: 24px;
+  line-height: 1;
+}
+
 .sideNav nav {
   display: grid;
   gap: 4px;
@@ -150,10 +184,56 @@ a {
   font-weight: 700;
 }
 
+.navShortLabel {
+  display: none;
+}
+
 .sideNav nav a:hover,
 .sideNav nav a.active {
   background: var(--primary-soft);
   color: var(--foreground);
+}
+
+@media (min-width: 1101px) {
+  :root[data-sidebar-collapsed="true"] .appShell {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  :root[data-sidebar-collapsed="true"] .sideNav {
+    align-items: center;
+    padding: 18px 10px;
+  }
+
+  :root[data-sidebar-collapsed="true"] .brandBlock {
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding: 0;
+  }
+
+  :root[data-sidebar-collapsed="true"] .brandText,
+  :root[data-sidebar-collapsed="true"] .navLabel {
+    display: none;
+  }
+
+  :root[data-sidebar-collapsed="true"] .sidebarToggle {
+    margin-left: 0;
+  }
+
+  :root[data-sidebar-collapsed="true"] .sideNav nav {
+    width: 100%;
+  }
+
+  :root[data-sidebar-collapsed="true"] .sideNav nav a {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  :root[data-sidebar-collapsed="true"] .navShortLabel {
+    display: inline;
+  }
 }
 
 .appFrame {
@@ -682,6 +762,10 @@ a {
     height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+  }
+
+  .sidebarToggle {
+    display: none;
   }
 
   .sideNav nav {
