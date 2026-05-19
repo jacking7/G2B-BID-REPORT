@@ -472,7 +472,8 @@ a {
 }
 
 .authShell,
-.shell {
+.shell,
+.productLoginShell {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 44px 0 64px;
@@ -481,6 +482,133 @@ a {
 .authShell {
   display: grid;
   gap: 18px;
+}
+
+.productLoginShell {
+  min-height: 100vh;
+  display: grid;
+  align-items: center;
+  padding: 28px 0;
+}
+
+.productLoginFrame {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(380px, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: 0 18px 42px var(--shadow);
+}
+
+.productLoginIntro,
+.productLoginContent {
+  padding: 34px;
+}
+
+.productLoginIntro {
+  display: grid;
+  align-content: space-between;
+  gap: 34px;
+  min-height: 620px;
+  border-right: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 13%, transparent), transparent 48%),
+    var(--surface);
+}
+
+.productBrandLine {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.productBrandLine strong,
+.productBrandLine span {
+  display: block;
+}
+
+.productBrandLine span:not(.brandMark) {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.productLoginIntro h1 {
+  margin-top: 10px;
+  max-width: 440px;
+  font-size: 34px;
+  line-height: 1.18;
+}
+
+.productLoginIntro p {
+  max-width: 480px;
+  margin-top: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.productLoginMeta {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+}
+
+.productLoginMeta li {
+  display: grid;
+  gap: 3px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.productLoginMeta strong {
+  font-size: 14px;
+}
+
+.productLoginMeta span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.productLoginContent {
+  display: grid;
+  align-content: center;
+  gap: 20px;
+}
+
+.loginUtilityRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.registerDisclosure {
+  display: grid;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.registerDisclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.registerDisclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.registerDisclosure summary strong {
+  color: var(--primary);
+}
+
+.registerDisclosure[open] summary {
+  margin-bottom: 16px;
 }
 
 .authIntro {
@@ -789,8 +917,15 @@ a {
   .metricGrid,
   .filterForm,
   .recipientForm,
-  .inlineForm {
+  .inlineForm,
+  .productLoginFrame {
     grid-template-columns: 1fr;
+  }
+
+  .productLoginIntro {
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
   }
 }
 
@@ -803,9 +938,19 @@ a {
   }
 
   .authShell,
-  .shell {
+  .shell,
+  .productLoginShell {
     width: min(100% - 20px, 1120px);
     padding: 18px 0 32px;
+  }
+
+  .productLoginIntro,
+  .productLoginContent {
+    padding: 22px;
+  }
+
+  .productLoginIntro h1 {
+    font-size: 28px;
   }
 
   .topActions,
