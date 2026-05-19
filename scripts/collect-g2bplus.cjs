@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { chromium } = require('playwright');
 
-const URL = 'https://www.g2bplus.kr/';
+const URL = 'https://www.g2bplus.kr/bidnotice_search.php?bsnsDiv=ITALL';
 
 function normalizeDate(raw) {
   const text = String(raw || '').trim();

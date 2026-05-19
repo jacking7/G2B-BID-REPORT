@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { splitKeywordInput } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
 export type KeywordActionState = {
@@ -26,7 +27,7 @@ const keywordSchema = z.object({
     .string()
     .trim()
     .min(1, "키워드를 입력해주세요.")
-    .max(50, "키워드는 50자 이하여야 합니다."),
+    .max(200, "키워드는 200자 이하여야 합니다."),
   type: z.enum(["include", "exclude"]).default("include"),
 });
 
@@ -60,30 +61,45 @@ export async function addKeywordAction(
   }
 
   const { keyword, type } = validated.data;
+  const keywords = splitKeywordInput(keyword);
 
-  const existing = await prisma.keywordRule.findFirst({
+  if (keywords.some((item) => item.length > 50)) {
+    return {
+      success: false,
+      message: "각 키워드는 50자 이하여야 합니다.",
+    };
+  }
+
+  const existingKeywords = await prisma.keywordRule.findMany({
     where: {
       userId: user.id,
-      keyword,
+      keyword: {
+        in: keywords,
+      },
       type,
       active: true,
     },
+    select: {
+      keyword: true,
+    },
   });
+  const existingSet = new Set(existingKeywords.map((item) => item.keyword.toLowerCase()));
+  const newKeywords = keywords.filter((item) => !existingSet.has(item.toLowerCase()));
 
-  if (existing) {
+  if (newKeywords.length === 0) {
     return {
       success: false,
       message: "이미 등록된 키워드입니다.",
     };
   }
 
-  await prisma.keywordRule.create({
-    data: {
-      keyword,
+  await prisma.keywordRule.createMany({
+    data: newKeywords.map((item) => ({
+      keyword: item,
       type,
       active: true,
       userId: user.id,
-    },
+    })),
   });
 
   revalidatePath("/settings");

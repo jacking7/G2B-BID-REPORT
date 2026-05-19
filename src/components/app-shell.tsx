@@ -17,6 +17,7 @@ type AppShellProps = {
 
 const navItems = [
   { href: "/results", label: "공고 목록", shortLabel: "공고", key: "results" },
+  { href: "/settings", label: "설정", shortLabel: "설정", key: "settings" },
 ] as const;
 
 export function AppShell({

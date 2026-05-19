@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
 const execFileAsync = promisify(execFile);
@@ -166,8 +167,10 @@ export async function collectBidNotices(userId: string) {
     .filter((item) => item.type === "exclude")
     .map((item) => item.keyword.trim())
     .filter(Boolean);
+  const expandedIncludeKeywords = expandKeywordValues(includeKeywords);
+  const expandedExcludeKeywords = expandKeywordValues(excludeKeywords);
 
-  if (includeKeywords.length === 0) {
+  if (expandedIncludeKeywords.length === 0) {
     return {
       importedCount: 0,
       totalMatches: 0,
@@ -189,7 +192,7 @@ export async function collectBidNotices(userId: string) {
     }
 
     const noticeText = `${notice.title} ${notice.organization ?? ""}`;
-    const matchedKeyword = includeKeywords.find((keyword) =>
+    const matchedKeyword = expandedIncludeKeywords.find((keyword) =>
       normalize(noticeText).includes(normalize(keyword)),
     );
 
@@ -197,7 +200,7 @@ export async function collectBidNotices(userId: string) {
       continue;
     }
 
-    const blockedKeyword = excludeKeywords.find((keyword) =>
+    const blockedKeyword = expandedExcludeKeywords.find((keyword) =>
       normalize(noticeText).includes(normalize(keyword)),
     );
 
@@ -266,7 +269,7 @@ export async function collectBidNotices(userId: string) {
   return {
     importedCount,
     totalMatches,
-    keywords: includeKeywords,
+    keywords: expandedIncludeKeywords,
     excludedCount,
     source,
   };

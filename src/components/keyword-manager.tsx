@@ -46,7 +46,7 @@ export function KeywordManager({
           <input
             type="text"
             name="keyword"
-            placeholder={type === "include" ? "예: 클라우드, 데이터, AI" : "예: 유지보수, 단순 구매"}
+            placeholder={type === "include" ? "예: AI, AX, 인공지능" : "예: 유지보수, 단순 구매"}
             required
           />
         </label>
