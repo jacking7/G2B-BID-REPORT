@@ -21,7 +21,18 @@ export async function collectBidNoticesAction(
   void state;
 
   const user = await requireUser();
-  const result = await collectBidNotices(user.id);
+  const result = await collectBidNotices(user.id).catch((error: unknown) => {
+    const message =
+      error instanceof Error ? error.message : "나라장터 API 수집 중 오류가 발생했습니다.";
+    return { error: message };
+  });
+
+  if ("error" in result) {
+    return {
+      success: false,
+      message: result.error,
+    };
+  }
 
   revalidatePath("/results");
 
@@ -36,8 +47,8 @@ export async function collectBidNoticesAction(
     success: true,
     message:
       result.importedCount > 0
-        ? `수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다. (${result.source === "live" ? "실제 수집" : "샘플 대체"})`
-        : `수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다. (${result.source === "live" ? "실제 수집" : "샘플 대체"})`,
+        ? `공식 나라장터 API 수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`
+        : `공식 나라장터 API 수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`,
   };
 }
 

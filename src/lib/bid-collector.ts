@@ -1,12 +1,20 @@
-import { execFile } from "node:child_process";
-import path from "node:path";
-import { promisify } from "node:util";
 import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
-const execFileAsync = promisify(execFile);
+const G2B_API_BASE_URL = "https://apis.data.go.kr/1230000/ad/BidPublicInfoService";
+const G2B_API_ENDPOINTS = [
+  "getBidPblancListInfoCnstwkPPSSrch",
+  "getBidPblancListInfoServcPPSSrch",
+  "getBidPblancListInfoFrgcptPPSSrch",
+  "getBidPblancListInfoThngPPSSrch",
+  "getBidPblancListInfoEtcPPSSrch",
+] as const;
+const G2B_API_SEARCH_FIELDS = ["bidNtceNm", "ntceInsttNm", "dminsttNm"] as const;
+const DEFAULT_LOOKBACK_DAYS = 30;
+const DEFAULT_NUM_ROWS = 100;
+const DEFAULT_MAX_PAGES_PER_ENDPOINT = 10;
 
-type ScrapedBidNotice = {
+type ApiBidNotice = {
   bidNtceNo: string;
   bidNtceOrd: string;
   title: string;
@@ -17,76 +25,67 @@ type ScrapedBidNotice = {
   detailUrl?: string;
 };
 
-type SampleBidNotice = {
+type G2bApiItem = {
   bidNtceNo: string;
-  bidNtceOrd: string;
-  title: string;
-  organization: string;
-  noticeDate: string;
-  closeDate: string;
-  baseAmount: number;
-  detailUrl?: string;
+  bidNtceOrd?: string;
+  bidNtceNm?: string;
+  ntceInsttNm?: string;
+  dminsttNm?: string;
+  bidNtceDt?: string;
+  rgstDt?: string;
+  bidClseDt?: string;
+  opengDt?: string;
+  presmptPrce?: string;
+  asignBdgtAmt?: string;
+  bidNtceDtlUrl?: string;
+  bidNtceUrl?: string;
 };
 
-const sampleBidNotices: SampleBidNotice[] = [
-  {
-    bidNtceNo: "R26BK01429611",
-    bidNtceOrd: "000",
-    title: "연암대학교 전문대학 혁신지원사업 성과 공유 확산 플랫폼 운영업체 선정",
-    organization: "연암대학교 산학협력단",
-    noticeDate: "2026-03-30T14:58:00+09:00",
-    closeDate: "2026-04-07T14:00:00+09:00",
-    baseAmount: 90909091,
-    detailUrl: "https://www.g2b.go.kr/",
-  },
-  {
-    bidNtceNo: "R26BK01420197",
-    bidNtceOrd: "000",
-    title: "2026년도 신안군 CCTV통합관제센터 유지보수 용역",
-    organization: "전라남도 신안군",
-    noticeDate: "2026-03-30T14:53:00+09:00",
-    closeDate: "2026-04-10T10:00:00+09:00",
-    baseAmount: 131636364,
-    detailUrl: "https://www.g2b.go.kr/",
-  },
-  {
-    bidNtceNo: "R26BK01428694",
-    bidNtceOrd: "000",
-    title: "현장문제 해결 기술 징검다리 모델 구축 사업",
-    organization: "농림식품기술기획평가원",
-    noticeDate: "2026-03-30T14:42:00+09:00",
-    closeDate: "2026-04-10T10:00:00+09:00",
-    baseAmount: 181818182,
-    detailUrl: "https://www.g2b.go.kr/",
-  },
-  {
-    bidNtceNo: "R26BK01429437",
-    bidNtceOrd: "000",
-    title: "2026년 교육 공공데이터 제공운영 컨설팅 사업",
-    organization: "한국교육학술정보원",
-    noticeDate: "2026-03-30T14:38:00+09:00",
-    closeDate: "2026-04-10T10:00:00+09:00",
-    baseAmount: 45454545,
-    detailUrl: "https://www.g2b.go.kr/",
-  },
-  {
-    bidNtceNo: "R26BK01428823",
-    bidNtceOrd: "000",
-    title: "IBK 기업디지털마케팅 콘텐츠 제작 대행사 선정",
-    organization: "중소기업은행",
-    noticeDate: "2026-03-30T14:43:00+09:00",
-    closeDate: "2026-04-10T12:00:00+09:00",
-    baseAmount: 227272727,
-    detailUrl: "https://www.g2b.go.kr/",
-  },
-];
+type G2bApiItems = G2bApiItem[] | G2bApiItem | "";
+
+type G2bApiResponse = {
+  response?: {
+    header?: {
+      resultCode?: string;
+      resultMsg?: string;
+    };
+    body?: {
+      items?: G2bApiItems;
+      totalCount?: number | string;
+    };
+  };
+};
 
 function normalize(text: string) {
   return text.trim().toLowerCase();
 }
 
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function keywordMatches(text: string, keyword: string) {
+  const trimmedKeyword = keyword.trim();
+  if (!trimmedKeyword) {
+    return false;
+  }
+
+  if (/^[a-z0-9]{1,3}$/i.test(trimmedKeyword)) {
+    return new RegExp(`(^|[^a-z0-9])${escapeRegExp(trimmedKeyword)}([^a-z0-9]|$)`, "i").test(
+      text,
+    );
+  }
+
+  return normalize(text).includes(normalize(trimmedKeyword));
+}
+
 function toDate(value: string | null | undefined) {
   return value ? new Date(value) : null;
+}
+
+function toPositiveInteger(value: string | undefined, fallback: number) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function getKoreanTodayBounds(date = new Date()) {
@@ -104,7 +103,100 @@ function getKoreanTodayBounds(date = new Date()) {
   };
 }
 
-function isNoticeOpenToday(notice: ScrapedBidNotice | SampleBidNotice) {
+function formatKoreanApiDate(date: Date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    formatter.formatToParts(date).map((part) => [part.type, part.value]),
+  );
+
+  return `${parts.year}${parts.month}${parts.day}${parts.hour}${parts.minute}`;
+}
+
+function getApiQueryRange(date = new Date()) {
+  const lookbackDays = toPositiveInteger(
+    process.env.G2B_API_LOOKBACK_DAYS,
+    DEFAULT_LOOKBACK_DAYS,
+  );
+  const { end } = getKoreanTodayBounds(date);
+  const start = new Date(end);
+  start.setDate(start.getDate() - (lookbackDays - 1));
+  start.setHours(0, 0, 0, 0);
+
+  return {
+    begin: formatKoreanApiDate(start),
+    end: formatKoreanApiDate(end),
+  };
+}
+
+function parseG2bDate(value: string | null | undefined) {
+  const text = String(value ?? "").trim();
+  if (!text) {
+    return null;
+  }
+
+  if (/^\d{12}$/.test(text)) {
+    return `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}T${text.slice(8, 10)}:${text.slice(10, 12)}:00+09:00`;
+  }
+
+  const match = text.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const [, year, month, day, hour = "00", minute = "00", second = "00"] = match;
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}+09:00`;
+}
+
+function parseAmount(value: string | null | undefined) {
+  const normalized = String(value ?? "").replace(/,/g, "").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function normalizeApiItems(items: G2bApiItems | undefined) {
+  if (!items) {
+    return [];
+  }
+
+  return Array.isArray(items) ? items : [items];
+}
+
+function mapApiItem(item: G2bApiItem): ApiBidNotice | null {
+  const bidNtceNo = String(item.bidNtceNo ?? "").trim();
+  const title = String(item.bidNtceNm ?? "").trim();
+
+  if (!bidNtceNo || !title) {
+    return null;
+  }
+
+  return {
+    bidNtceNo,
+    bidNtceOrd: String(item.bidNtceOrd ?? "000").trim() || "000",
+    title,
+    organization: String(item.dminsttNm || item.ntceInsttNm || "").trim(),
+    noticeDate: parseG2bDate(item.bidNtceDt || item.rgstDt),
+    closeDate: parseG2bDate(item.bidClseDt || item.opengDt),
+    baseAmount: parseAmount(item.presmptPrce || item.asignBdgtAmt),
+    detailUrl: item.bidNtceDtlUrl || item.bidNtceUrl,
+  };
+}
+
+function isNoticeOpenToday(notice: ApiBidNotice) {
   const noticeDate = toDate(notice.noticeDate);
   const closeDate = toDate(notice.closeDate);
 
@@ -116,34 +208,82 @@ function isNoticeOpenToday(notice: ScrapedBidNotice | SampleBidNotice) {
   return noticeDate <= end && closeDate >= start;
 }
 
-async function scrapeLiveBidNotices() {
-  const scriptPath = path.join(process.cwd(), "scripts", "collect-g2bplus.cjs");
-  const { stdout } = await execFileAsync(process.execPath, [scriptPath], {
-    cwd: process.cwd(),
-    timeout: 120000,
-    maxBuffer: 10 * 1024 * 1024,
-  });
+async function fetchApiPage(
+  endpoint: string,
+  pageNo: number,
+  range: ReturnType<typeof getApiQueryRange>,
+  query?: { field: (typeof G2B_API_SEARCH_FIELDS)[number]; keyword: string },
+) {
+  const serviceKey = process.env.G2B_API_SERVICE_KEY?.trim();
 
-  const parsed = JSON.parse(stdout) as { notices?: ScrapedBidNotice[] };
-  return parsed.notices ?? [];
+  if (!serviceKey) {
+    throw new Error("G2B_API_SERVICE_KEY가 설정되지 않았습니다.");
+  }
+
+  const numOfRows = toPositiveInteger(process.env.G2B_API_NUM_ROWS, DEFAULT_NUM_ROWS);
+  const url = new URL(`${G2B_API_BASE_URL}/${endpoint}`);
+  url.searchParams.set("serviceKey", serviceKey);
+  url.searchParams.set("pageNo", String(pageNo));
+  url.searchParams.set("numOfRows", String(numOfRows));
+  url.searchParams.set("type", "json");
+  url.searchParams.set("inqryDiv", "1");
+  url.searchParams.set("inqryBgnDt", range.begin);
+  url.searchParams.set("inqryEndDt", range.end);
+  if (query) {
+    url.searchParams.set(query.field, query.keyword);
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`나라장터 API 호출 실패: ${response.status}`);
+  }
+
+  const data = (await response.json()) as G2bApiResponse;
+  const resultCode = data.response?.header?.resultCode;
+  if (resultCode && resultCode !== "00") {
+    throw new Error(data.response?.header?.resultMsg ?? "나라장터 API 응답 오류");
+  }
+
+  const body = data.response?.body;
+  return {
+    items: normalizeApiItems(body?.items),
+    totalCount: Number(body?.totalCount ?? 0),
+    numOfRows,
+  };
 }
 
-async function loadBidNotices() {
-  try {
-    const notices = await scrapeLiveBidNotices();
-    if (notices.length > 0) {
-      return {
-        notices,
-        source: "live" as const,
-      };
+async function loadBidNotices(keywords: string[]) {
+  const range = getApiQueryRange();
+  const maxPages = toPositiveInteger(
+    process.env.G2B_API_MAX_PAGES_PER_ENDPOINT,
+    DEFAULT_MAX_PAGES_PER_ENDPOINT,
+  );
+  const notices = new Map<string, ApiBidNotice>();
+
+  for (const keyword of keywords) {
+    for (const endpoint of G2B_API_ENDPOINTS) {
+      for (const field of G2B_API_SEARCH_FIELDS) {
+        for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
+          const page = await fetchApiPage(endpoint, pageNo, range, { field, keyword });
+
+          for (const item of page.items) {
+            const notice = mapApiItem(item);
+            if (notice) {
+              notices.set(`${notice.bidNtceNo}:${notice.bidNtceOrd}`, notice);
+            }
+          }
+
+          if (page.items.length === 0 || pageNo * page.numOfRows >= page.totalCount) {
+            break;
+          }
+        }
+      }
     }
-  } catch {
-    // fall back to sample data when live scraping is unavailable
   }
 
   return {
-    notices: sampleBidNotices,
-    source: "sample" as const,
+    notices: Array.from(notices.values()),
+    source: "official-api" as const,
   };
 }
 
@@ -176,11 +316,11 @@ export async function collectBidNotices(userId: string) {
       totalMatches: 0,
       excludedCount: 0,
       keywords: [],
-      source: "sample" as const,
+      source: "official-api" as const,
     };
   }
 
-  const { notices, source } = await loadBidNotices();
+  const { notices, source } = await loadBidNotices(expandedIncludeKeywords);
 
   let importedCount = 0;
   let totalMatches = 0;
@@ -193,7 +333,7 @@ export async function collectBidNotices(userId: string) {
 
     const noticeText = `${notice.title} ${notice.organization ?? ""}`;
     const matchedKeyword = expandedIncludeKeywords.find((keyword) =>
-      normalize(noticeText).includes(normalize(keyword)),
+      keywordMatches(noticeText, keyword),
     );
 
     if (!matchedKeyword) {
@@ -201,7 +341,7 @@ export async function collectBidNotices(userId: string) {
     }
 
     const blockedKeyword = expandedExcludeKeywords.find((keyword) =>
-      normalize(noticeText).includes(normalize(keyword)),
+      keywordMatches(noticeText, keyword),
     );
 
     if (blockedKeyword) {
