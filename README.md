@@ -71,6 +71,7 @@ npm run dev
 | `G2B_API_LOOKBACK_DAYS` | 오늘 포함 공고를 찾기 위해 등록일시를 거슬러 조회할 기간. 기본값 `30` |
 | `G2B_API_NUM_ROWS` | API 페이지당 조회 건수. 기본값 `100` |
 | `G2B_API_MAX_PAGES_PER_ENDPOINT` | 상세기능별 최대 조회 페이지 수. 기본값 `10` |
+| `G2B_API_CONCURRENCY` | API 조회 동시 실행 수. 기본값 `4`, 최대 `8` |
 | `ENABLE_INTERNAL_SCHEDULER` | 앱 내부 스케줄러 사용 여부 |
 | `INTERNAL_JOB_TOKEN` | 외부 작업 API 인증 토큰 |
 | `APP_BASE_URL` | `npm run job:*`에서 사용할 앱 URL |

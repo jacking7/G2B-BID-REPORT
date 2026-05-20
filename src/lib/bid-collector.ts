@@ -13,6 +13,8 @@ const G2B_API_SEARCH_FIELDS = ["bidNtceNm", "ntceInsttNm", "dminsttNm"] as const
 const DEFAULT_LOOKBACK_DAYS = 30;
 const DEFAULT_NUM_ROWS = 100;
 const DEFAULT_MAX_PAGES_PER_ENDPOINT = 10;
+const DEFAULT_API_CONCURRENCY = 4;
+const MAX_API_CONCURRENCY = 8;
 
 export type CollectionProgress = {
   phase: string;
@@ -120,6 +122,32 @@ function toDate(value: string | null | undefined) {
 function toPositiveInteger(value: string | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getApiConcurrency() {
+  return Math.min(
+    toPositiveInteger(process.env.G2B_API_CONCURRENCY, DEFAULT_API_CONCURRENCY),
+    MAX_API_CONCURRENCY,
+  );
+}
+
+async function runConcurrently<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<void>,
+) {
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, items.length);
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (nextIndex < items.length) {
+        const item = items[nextIndex];
+        nextIndex += 1;
+        await worker(item);
+      }
+    }),
+  );
 }
 
 function getKoreanTodayBounds(date = new Date()) {
@@ -293,11 +321,21 @@ async function loadBidNotices(keywords: string[], options?: CollectBidNoticesOpt
     process.env.G2B_API_MAX_PAGES_PER_ENDPOINT,
     DEFAULT_MAX_PAGES_PER_ENDPOINT,
   );
+  const apiConcurrency = getApiConcurrency();
   const totalApiCalls =
     keywords.length * G2B_API_ENDPOINTS.length * G2B_API_SEARCH_FIELDS.length * maxPages;
   let completedApiCalls = 0;
   let scannedCount = 0;
   const notices = new Map<string, ApiBidNotice>();
+  const searchTasks = keywords.flatMap((keyword) =>
+    G2B_API_ENDPOINTS.flatMap((endpoint) =>
+      G2B_API_SEARCH_FIELDS.map((field) => ({
+        keyword,
+        endpoint,
+        field,
+      })),
+    ),
+  );
 
   emitProgress(options, {
     phase: "공식 API 조회 준비",
@@ -309,47 +347,43 @@ async function loadBidNotices(keywords: string[], options?: CollectBidNoticesOpt
     excludedCount: 0,
   });
 
-  for (const keyword of keywords) {
-    for (const endpoint of G2B_API_ENDPOINTS) {
-      for (const field of G2B_API_SEARCH_FIELDS) {
-        for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
-          assertNotCancelled(options?.signal);
-          const page = await fetchApiPage(
-            endpoint,
-            pageNo,
-            range,
-            { field, keyword },
-            options?.signal,
-          );
-          completedApiCalls += 1;
-          scannedCount += page.items.length;
+  await runConcurrently(searchTasks, apiConcurrency, async ({ keyword, endpoint, field }) => {
+    for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
+      assertNotCancelled(options?.signal);
+      const page = await fetchApiPage(
+        endpoint,
+        pageNo,
+        range,
+        { field, keyword },
+        options?.signal,
+      );
+      completedApiCalls += 1;
+      scannedCount += page.items.length;
 
-          for (const item of page.items) {
-            const notice = mapApiItem(item);
-            if (notice) {
-              notices.set(`${notice.bidNtceNo}:${notice.bidNtceOrd}`, notice);
-            }
-          }
-
-          emitProgress(options, {
-            phase: "공식 API 조회 중",
-            current: completedApiCalls,
-            total: totalApiCalls,
-            keyword,
-            endpoint,
-            scannedCount,
-            importedCount: 0,
-            totalMatches: 0,
-            excludedCount: 0,
-          });
-
-          if (page.items.length === 0 || pageNo * page.numOfRows >= page.totalCount) {
-            break;
-          }
+      for (const item of page.items) {
+        const notice = mapApiItem(item);
+        if (notice) {
+          notices.set(`${notice.bidNtceNo}:${notice.bidNtceOrd}`, notice);
         }
       }
+
+      emitProgress(options, {
+        phase: "공식 API 조회 중",
+        current: completedApiCalls,
+        total: totalApiCalls,
+        keyword,
+        endpoint,
+        scannedCount,
+        importedCount: 0,
+        totalMatches: 0,
+        excludedCount: 0,
+      });
+
+      if (page.items.length === 0 || pageNo * page.numOfRows >= page.totalCount) {
+        break;
+      }
     }
-  }
+  });
 
   return {
     notices: Array.from(notices.values()),
