@@ -1,48 +1,64 @@
 # G2B Bid Report
 
-나라장터 입찰공고를 키워드 기준으로 수집하고, 결과를 웹 화면·Excel·이메일로 확인하는 내부 운영 콘솔입니다.
+G2B Bid Report is a self-hosted web console for collecting Korea G2B public procurement notices by user-defined keywords, reviewing matched results, exporting Excel files, and sending email reports.
 
-## 현재 상태
+The project is built as a small operational MVP: one app, one database, explicit environment variables, and simple deployment primitives.
 
-- Next.js 16 App Router 기반 웹 앱
-- Prisma + SQLite 기반 데이터 저장
-- 이메일/비밀번호 로그인
-- 사용자별 포함 키워드, 제외 키워드, 수신자, 자동 실행 ON/OFF, 수집/발송 시간 관리
-- 조달청 나라장터 입찰공고정보서비스 공식 Open API 기반 공고 수집
-- 수집 결과 조회, 날짜/상태/키워드 필터, Excel 다운로드
-- SMTP 메일 발송 및 발송 이력 저장
-- 내부 스케줄러 또는 외부 cron 작업 API 지원
-- Dracula / White 테마 전환
-- 접을 수 있는 좌측 메뉴
+## Features
 
-## 수집 동작 기준
+- Next.js App Router web console
+- Email/password authentication
+- User-specific include and exclude keyword rules
+- User-specific recipients and collection/send schedules
+- User-level automation on/off plus a server-wide scheduler switch
+- Official G2B bid notice Open API collection
+- Result filtering by date, mail status, keyword, and free-text query
+- Excel export for collected results
+- SMTP email report sending with send history
+- Password reset, password change, and account withdrawal
+- SQLite + Prisma data layer
+- Light and Dracula-style dark themes
 
-수집은 로그인 사용자별 설정을 기준으로 동작합니다.
+## Public-Safe Repository Notes
 
-1. 활성 포함 키워드가 1개 이상 있어야 수집합니다.
-2. 조달청 나라장터 입찰공고정보서비스 공식 Open API를 호출합니다.
-3. 공고일과 마감일 사이에 오늘 날짜가 포함된 공고만 처리합니다.
-4. 공고명 + 기관명에 포함 키워드가 있으면 후보가 됩니다.
-5. 후보 공고에 제외 키워드가 있으면 저장하지 않습니다.
-6. `BidNotice`는 공고번호/차수 기준으로 upsert 합니다.
-7. `CollectedResult`는 사용자 + 공고 기준으로 중복 저장하지 않습니다.
-8. 공식 API 호출이 실패하면 수집 결과를 저장하지 않고 오류 메시지를 표시합니다.
+This repository is intended to be safe to share publicly when runtime files stay out of git.
 
-오늘 기준 필터는 KST 기준입니다.
+Do not commit:
 
-```ts
-noticeDate <= 오늘 23:59:59.999 KST
-closeDate >= 오늘 00:00:00.000 KST
-```
+- `.env` or any real environment file
+- Real API keys, SMTP credentials, auth secrets, or job tokens
+- Local SQLite databases such as `dev.db`
+- Private SSH keys, PEM files, or deployment credentials
+- Production hostnames, IP addresses, or server-specific paths unless they are intentionally public
 
-## 주요 화면
+Use `.env.example` as the public template and keep real values only in the runtime environment.
 
-- `/login`: 로그인, 첫 관리자 계정 생성
-- `/settings`: 포함/제외 키워드, 수신자, 수집/발송 시간 설정
-- `/results`: 수동 수집, 결과 필터, Excel 다운로드, 신규 결과 메일 발송, 메일 이력 확인
-- `/api/health`: DB 연결 상태 확인
+## Tech Stack
 
-## 빠른 시작
+- Next.js 16
+- React 19
+- TypeScript
+- Prisma 7
+- SQLite via `better-sqlite3`
+- `bcryptjs` for password hashing
+- `jose` for signed session cookies
+- `nodemailer` for email delivery
+- `xlsx` for spreadsheet export
+- `node-cron` for optional in-app scheduling
+
+## App Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Login, first account creation, password reset request |
+| `/reset-password` | Password reset by token |
+| `/settings` | Keywords, recipients, schedule, and account management |
+| `/results` | Manual collection, filters, exports, mail send, status overview |
+| `/api/health` | Database health check |
+| `/api/jobs/collect` | Authenticated external collection job endpoint |
+| `/api/jobs/send` | Authenticated external mail job endpoint |
+
+## Quick Start
 
 ```bash
 cp .env.example .env
@@ -51,99 +67,105 @@ npm run db:migrate
 npm run dev
 ```
 
-브라우저에서 `http://localhost:3000`을 엽니다.
+Open the local app:
 
-## 환경변수
+```text
+http://localhost:3000
+```
 
-`.env.example`을 기준으로 `.env`를 준비합니다.
+On a fresh database, the login page prompts for the first operator account.
 
-| 변수 | 설명 |
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in local or production values.
+
+| Variable | Description |
 | --- | --- |
-| `DATABASE_URL` | SQLite DB 경로. 기본값은 `file:./dev.db` |
-| `AUTH_SECRET` | 로그인 쿠키 서명용 긴 랜덤 문자열 |
-| `AUTH_COOKIE_SECURE` | HTTPS면 `true`, HTTP 배포면 `false` |
-| `SMTP_HOST` | SMTP 서버 주소 |
-| `SMTP_PORT` | SMTP 포트. `465`면 SSL 사용 |
-| `SMTP_USER` | SMTP 계정 |
-| `SMTP_PASS` | SMTP 비밀번호 또는 앱 비밀번호 |
-| `MAIL_FROM` | 발신자 이메일 |
-| `G2B_API_SERVICE_KEY` | 조달청 나라장터 입찰공고정보서비스 일반 인증키 |
-| `G2B_API_LOOKBACK_DAYS` | 오늘 포함 공고를 찾기 위해 등록일시를 거슬러 조회할 기간. 기본값 `30` |
-| `G2B_API_NUM_ROWS` | API 페이지당 조회 건수. 기본값 `100` |
-| `G2B_API_MAX_PAGES_PER_ENDPOINT` | 상세기능별 최대 조회 페이지 수. 기본값 `10` |
-| `G2B_API_CONCURRENCY` | API 조회 동시 실행 수. 기본값 `4`, 최대 `8` |
-| `ENABLE_INTERNAL_SCHEDULER` | 앱 내부 스케줄러 사용 여부 |
-| `INTERNAL_JOB_TOKEN` | 외부 작업 API 인증 토큰 |
-| `APP_BASE_URL` | `npm run job:*`에서 사용할 앱 URL |
+| `DATABASE_URL` | SQLite database URL, usually `file:./dev.db` for local development |
+| `AUTH_SECRET` | Long random secret used to sign session cookies |
+| `AUTH_COOKIE_SECURE` | Set `true` for HTTPS deployments, `false` for plain HTTP local/dev use |
+| `SMTP_HOST` | SMTP server host |
+| `SMTP_PORT` | SMTP server port |
+| `SMTP_USER` | SMTP username |
+| `SMTP_PASS` | SMTP password or app password |
+| `MAIL_FROM` | Email sender address |
+| `G2B_API_SERVICE_KEY` | Official G2B Open API service key |
+| `G2B_API_LOOKBACK_DAYS` | Number of registration days to search backwards |
+| `G2B_API_NUM_ROWS` | Rows per API page |
+| `G2B_API_MAX_PAGES_PER_ENDPOINT` | Maximum pages to request per endpoint |
+| `G2B_API_CONCURRENCY` | Concurrent API request limit |
+| `ENABLE_INTERNAL_SCHEDULER` | Server-wide in-app scheduler switch |
+| `INTERNAL_JOB_TOKEN` | Bearer token for external job endpoints |
+| `APP_BASE_URL` | Base URL used by job scripts and password reset links |
 
-`ENABLE_INTERNAL_SCHEDULER`는 서버 전체 스위치입니다. `/settings`의 자동 실행 ON/OFF는 사용자별 스케줄 실행 여부이며, 내부 스케줄러와 외부 작업 API 모두 활성 스케줄 사용자만 처리합니다.
+If SMTP variables are empty, email sending is skipped and recorded as a skipped mail history entry.
 
-Hiworks SMTP 예시:
+## Collection Rules
 
-```bash
-SMTP_HOST="smtps.hiworks.com"
-SMTP_PORT="465"
-SMTP_USER="bot@example.com"
-SMTP_PASS="app-password"
-MAIL_FROM="bot@example.com"
+Collection runs per user.
+
+1. At least one active include keyword is required.
+2. The app queries the official G2B bid notice Open API.
+3. A notice must include today's KST date between its notice date and close date.
+4. Include keywords are matched against notice title and organization fields.
+5. Exclude keywords remove otherwise matched notices.
+6. `BidNotice` is upserted by notice number and order.
+7. `CollectedResult` is unique per user and notice.
+8. API failures do not create partial result rows.
+
+KST date bounds:
+
+```text
+noticeDate <= today 23:59:59.999 KST
+closeDate >= today 00:00:00.000 KST
 ```
 
-SMTP 설정이 비어 있으면 실제 메일은 보내지 않고 `MailHistory`에 `skipped` 이력을 남깁니다.
+## Automation Model
 
-## 주요 명령
+Automation has two layers:
+
+- `ENABLE_INTERNAL_SCHEDULER`: server-wide on/off switch
+- `ScheduleSetting.active`: per-user on/off switch managed in the UI
+
+The effective status is active only when both are on. External job endpoints also process active schedules only.
+
+## Scripts
 
 ```bash
-npm run dev                 # 개발 서버
-npm run test                # lint + TypeScript 검사
-npm run build               # production build
-npm run db:generate         # Prisma Client 생성
-npm run db:migrate          # Prisma migration 적용
-npm run db:push             # 스키마를 DB에 직접 반영
-npm run job:collect         # 외부 collect API 호출
-npm run job:send            # 외부 send API 호출
+npm run dev          # Start local development server
+npm run test         # Run ESLint and TypeScript checks
+npm run build        # Generate Prisma Client and build Next.js
+npm run start        # Start production Next.js server
+npm run db:generate  # Generate Prisma Client
+npm run db:migrate   # Apply Prisma migrations
+npm run db:push      # Push schema directly to the database
+npm run job:collect  # Call the external collect job endpoint
+npm run job:send     # Call the external send job endpoint
 ```
 
-## 로컬 검증 순서
+## External Job API
 
-운영 반영 전에는 로컬에서 먼저 확인합니다.
+External schedulers can trigger collection or sending:
 
-1. `npm run test`
-2. `npm run build`
-3. `npm run dev`
-4. `/login`에서 테스트 계정 생성
-5. `/settings`에서 포함 키워드, 수신자, 스케줄 저장
-6. `/results`에서 실제 수집 실행
-7. 결과 목록, 날짜 기본값, 필터, Excel 다운로드 확인
-8. SMTP를 비운 상태에서 메일 발송을 눌러 `skipped` 이력 확인
-9. 필요하면 `/api/jobs/collect`를 `userId`와 함께 호출해 외부 작업 API 확인
-
-실제 메일 발송을 피하려면 로컬 dev 서버를 아래처럼 실행합니다.
-
-```bash
-SMTP_HOST= SMTP_USER= SMTP_PASS= MAIL_FROM= npm run dev
+```text
+POST /api/jobs/collect
+POST /api/jobs/send
 ```
 
-## 외부 작업 API
+Required headers:
 
-외부 cron 또는 worker에서 수집/발송 작업을 실행할 수 있습니다.
-
-- `POST /api/jobs/collect`
-- `POST /api/jobs/send`
-
-요청 헤더:
-
-```bash
-Authorization: Bearer $INTERNAL_JOB_TOKEN
+```text
+Authorization: Bearer <INTERNAL_JOB_TOKEN>
 Content-Type: application/json
 ```
 
-모든 활성 스케줄 사용자 실행:
+Run for all active users:
 
 ```json
 {}
 ```
 
-단일 사용자 실행:
+Run for one user:
 
 ```json
 {
@@ -151,86 +173,78 @@ Content-Type: application/json
 }
 ```
 
-스크립트 예시:
+## Health Check
 
-```bash
-export INTERNAL_JOB_TOKEN="your-token"
-./scripts/run-job.sh http://localhost:3000 collect
-./scripts/run-job.sh http://localhost:3000 send
-```
-
-## 헬스 체크
-
-기본 확인:
+Basic database check:
 
 ```bash
 curl http://localhost:3000/api/health
 ```
 
-응답 예시:
+Example response:
 
 ```json
 {
   "ok": true,
   "database": "connected",
-  "checkedAt": "2026-05-18T10:00:00.000Z"
+  "checkedAt": "2026-05-20T00:00:00.000Z"
 }
 ```
 
-카운트 포함 상세 확인:
+Detailed health data requires the internal job token:
 
 ```bash
 curl "http://localhost:3000/api/health?detailed=1" \
-  -H "Authorization: Bearer $INTERNAL_JOB_TOKEN"
+  -H "Authorization: Bearer <INTERNAL_JOB_TOKEN>"
 ```
 
-## 데이터 모델 요약
+## Deployment Checklist
 
-- `User`: 로그인 사용자
-- `KeywordRule`: 사용자별 포함/제외 키워드
-- `Recipient`: 사용자별 활성 수신자
-- `ScheduleSetting`: 사용자별 수집/발송 시간
-- `BidNotice`: 공고 원본 정보
-- `CollectedResult`: 사용자별 수집 결과
-- `MailHistory`: 메일 발송/실패/skipped 이력
+1. Prepare runtime environment variables outside git.
+2. Install dependencies.
+3. Apply migrations.
+4. Run tests.
+5. Build the app.
+6. Start or restart the process manager.
+7. Check `/api/health`.
 
-## 배포 전 체크
+Example:
 
-1. `.env` 준비
-2. `npm install`
-3. `npm run db:migrate`
-4. `npm run test`
-5. `npm run build`
-6. 로컬 브라우저 기능 확인
-7. GitHub push
-8. 운영 서버 pull/build/restart
-9. `/api/health` 확인
+```bash
+npm install
+npm run db:migrate
+npm run test
+npm run build
+npm run start
+```
 
-## 문제 확인
+## Troubleshooting
 
-### 수집 결과가 0건일 때
+### No Collection Results
 
-- `.env`에 `G2B_API_SERVICE_KEY`가 설정되어 있는지 확인합니다.
-- 포함 키워드가 등록되어 있는지 확인합니다.
-- 키워드가 공식 API 조회 기간 안의 공고명 또는 기관명에 실제로 포함되는지 확인합니다.
-- 오래 전에 등록됐지만 아직 마감되지 않은 공고를 찾아야 하면 `G2B_API_LOOKBACK_DAYS`를 늘립니다.
-- 제외 키워드에 의해 걸러졌는지 확인합니다.
-- 오늘 날짜가 공고일과 마감일 사이에 포함되는지 확인합니다.
+- Confirm `G2B_API_SERVICE_KEY` is configured.
+- Confirm at least one include keyword is active.
+- Confirm the target notice is within the configured lookback window.
+- Confirm today's KST date is between the notice date and close date.
+- Check whether an exclude keyword filtered the result.
 
-### 로그인 후 설정 저장 시 튕길 때
+### Login or Session Issues
 
-- HTTP 배포면 `AUTH_COOKIE_SECURE=false`가 필요합니다.
-- HTTPS 배포면 `AUTH_COOKIE_SECURE=true`를 사용할 수 있습니다.
-- `AUTH_SECRET`이 설정되어 있는지 확인합니다.
+- Use a stable `AUTH_SECRET`.
+- Use `AUTH_COOKIE_SECURE=true` behind HTTPS.
+- Use `AUTH_COOKIE_SECURE=false` only for local/plain HTTP environments.
 
-### 메일이 안 나갈 때
+### Mail Is Not Sent
 
-- SMTP 설정이 비어 있으면 의도적으로 `skipped` 처리됩니다.
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`을 확인합니다.
-- Hiworks 465 포트는 SSL 연결입니다.
+- Confirm SMTP variables are configured.
+- Confirm the sender account allows SMTP login.
+- Empty SMTP settings intentionally create skipped mail history instead of sending.
 
-## 남은 개선 후보
+## References
 
-- SQLite 백업 자동화 또는 Postgres 전환
-- 수집 실패 원인 로그/관리 화면 추가
-- 키워드별 통계와 최근 수집 요약 대시보드 추가
+- [johannesjo/parallel-code](https://github.com/johannesjo/parallel-code)
+- [Yeachan-Heo/oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex)
+
+## License
+
+No license has been selected yet. Add one before distributing or accepting external contributions.
