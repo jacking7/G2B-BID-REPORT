@@ -1,6 +1,13 @@
 # G2B Bid Report
 
 <p align="center">
+  <a href="https://github.com/jacking7/G2B-BID-REPORT/releases/tag/v0.1.0"><img alt="Release v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-ff79c6?style=for-the-badge&labelColor=44475a"></a>
+  <a href="./LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-f1fa8c?style=for-the-badge&labelColor=44475a"></a>
+  <a href="https://nodejs.org/"><img alt="Node >=20" src="https://img.shields.io/badge/node-%3E%3D20-50fa7b?style=for-the-badge&logo=node.js&logoColor=white&labelColor=44475a"></a>
+  <a href="https://g2b-report.duckdns.org/"><img alt="Live example online" src="https://img.shields.io/badge/live-online-8be9fd?style=for-the-badge&labelColor=44475a"></a>
+</p>
+
+<p align="center">
   <strong>Collect Korea G2B bid notices, review matches, export Excel files, and send email reports from one self-hosted console.</strong>
 </p>
 
