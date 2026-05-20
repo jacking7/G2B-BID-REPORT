@@ -1,8 +1,32 @@
 # G2B Bid Report
 
+<p align="center">
+  <strong>Collect Korea G2B bid notices, review matches, export Excel files, and send email reports from one self-hosted console.</strong>
+</p>
+
+<p align="center">
+  <a href="https://g2b-report.duckdns.org/"><strong>Live Example</strong></a>
+  ·
+  <a href="#features">Features</a>
+  ·
+  <a href="#quick-start">Quick Start</a>
+  ·
+  <a href="#deployment-checklist">Deployment</a>
+</p>
+
 G2B Bid Report is a self-hosted web console for collecting Korea G2B public procurement notices by user-defined keywords, reviewing matched results, exporting Excel files, and sending email reports.
 
 The project is built as a small operational MVP: one app, one database, explicit environment variables, and simple deployment primitives.
+
+## Live Example
+
+Try the public example deployment:
+
+```text
+https://g2b-report.duckdns.org/
+```
+
+The example page shows the production-style console flow while keeping runtime secrets, local database files, and deployment credentials out of the repository.
 
 ## Features
 
