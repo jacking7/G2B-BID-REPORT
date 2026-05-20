@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth";
+import { deleteSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { splitKeywordInput } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
@@ -18,6 +18,17 @@ export type RecipientActionState = {
 };
 
 export type ScheduleActionState = {
+  message?: string;
+  success?: boolean;
+};
+
+export type MemberActionState = {
+  errors?: {
+    currentPassword?: string[];
+    newPassword?: string[];
+    confirmPassword?: string[];
+    confirmText?: string[];
+  };
   message?: string;
   success?: boolean;
 };
@@ -46,6 +57,24 @@ const scheduleSchema = z.object({
 const scheduleActiveSchema = z.object({
   active: z.enum(["true", "false"]),
   returnTo: z.string().optional(),
+});
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
+    newPassword: z.string().min(8, "새 비밀번호는 8자 이상이어야 합니다."),
+    confirmPassword: z.string().min(1, "새 비밀번호 확인을 입력해주세요."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "새 비밀번호가 서로 일치하지 않습니다.",
+  });
+
+const withdrawUserSchema = z.object({
+  currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
+  confirmText: z.literal("탈퇴", {
+    error: "확인 문구로 탈퇴를 입력해주세요.",
+  }),
 });
 
 export async function addKeywordAction(
@@ -314,4 +343,138 @@ export async function updateScheduleActiveAction(formData: FormData) {
   revalidatePath("/settings");
   revalidatePath("/results");
   redirect(returnTo);
+}
+
+export async function changePasswordAction(
+  _state: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  const user = await requireUser();
+  const validated = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!validated.success) {
+    return {
+      errors: validated.error.flatten().fieldErrors,
+      message: "입력값을 다시 확인해주세요.",
+      success: false,
+    };
+  }
+
+  const account = await prisma.user.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      passwordHash: true,
+    },
+  });
+
+  if (!account) {
+    await deleteSession();
+    redirect("/login");
+  }
+
+  const { currentPassword, newPassword } = validated.data;
+  const currentPasswordValid = await verifyPassword(currentPassword, account.passwordHash);
+
+  if (!currentPasswordValid) {
+    return {
+      message: "현재 비밀번호가 올바르지 않습니다.",
+      success: false,
+    };
+  }
+
+  const samePassword = await verifyPassword(newPassword, account.passwordHash);
+
+  if (samePassword) {
+    return {
+      errors: {
+        newPassword: ["현재 비밀번호와 다른 새 비밀번호를 입력해주세요."],
+      },
+      message: "새 비밀번호를 다시 확인해주세요.",
+      success: false,
+    };
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        passwordHash,
+      },
+    }),
+    prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    }),
+  ]);
+
+  revalidatePath("/settings");
+
+  return {
+    message: "비밀번호가 변경되었습니다.",
+    success: true,
+  };
+}
+
+export async function withdrawUserAction(
+  _state: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  const user = await requireUser();
+  const validated = withdrawUserSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    confirmText: formData.get("confirmText"),
+  });
+
+  if (!validated.success) {
+    return {
+      errors: validated.error.flatten().fieldErrors,
+      message: "탈퇴 확인값을 다시 확인해주세요.",
+      success: false,
+    };
+  }
+
+  const account = await prisma.user.findUnique({
+    where: {
+      id: user.id,
+    },
+    select: {
+      passwordHash: true,
+    },
+  });
+
+  if (!account) {
+    await deleteSession();
+    redirect("/login");
+  }
+
+  const currentPasswordValid = await verifyPassword(
+    validated.data.currentPassword,
+    account.passwordHash,
+  );
+
+  if (!currentPasswordValid) {
+    return {
+      message: "현재 비밀번호가 올바르지 않습니다.",
+      success: false,
+    };
+  }
+
+  await prisma.user.delete({
+    where: {
+      id: user.id,
+    },
+  });
+  await deleteSession();
+
+  redirect("/login");
 }

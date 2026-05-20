@@ -654,6 +654,65 @@ a {
   margin-top: 14px;
 }
 
+.memberManager {
+  display: grid;
+  gap: 18px;
+}
+
+.accountSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.accountSummary div {
+  display: grid;
+  gap: 5px;
+}
+
+.accountSummary dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.accountSummary dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.memberForms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.memberForm {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.memberForm header {
+  display: grid;
+  gap: 4px;
+}
+
+.memberForm h3 {
+  font-size: 16px;
+}
+
+.dangerMemberForm {
+  padding-left: 18px;
+  border-left: 1px solid var(--border);
+}
+
 .field {
   display: grid;
   gap: 7px;
@@ -1073,6 +1132,12 @@ a {
   border-color: var(--border-strong);
 }
 
+.dangerButton {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .primaryButton:disabled,
 .secondaryButton:disabled,
 .ghostButton:disabled {
@@ -1233,9 +1298,18 @@ a {
   .filterForm,
   .recipientForm,
   .inlineForm,
+  .accountSummary,
+  .memberForms,
   .productLoginFrame,
   .automationStatusBoard {
     grid-template-columns: 1fr;
+  }
+
+  .dangerMemberForm {
+    padding-top: 18px;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    border-left: 0;
   }
 
   .productLoginIntro {

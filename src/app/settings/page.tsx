@@ -1,12 +1,15 @@
 import {
   addKeywordAction,
   addRecipientAction,
+  changePasswordAction,
   deleteKeywordAction,
   deleteRecipientAction,
   saveScheduleAction,
+  withdrawUserAction,
 } from "@/app/actions/settings";
 import { AppShell } from "@/components/app-shell";
 import { KeywordManager } from "@/components/keyword-manager";
+import { MemberManager } from "@/components/member-manager";
 import { RecipientManager } from "@/components/recipient-manager";
 import { ScheduleManager } from "@/components/schedule-manager";
 import { requireUser } from "@/lib/auth";
@@ -134,6 +137,25 @@ export default async function SettingsPage() {
             </div>
           </div>
           <ScheduleManager schedule={schedule} saveAction={saveScheduleAction} />
+        </article>
+      </section>
+
+      <section className="consoleGrid">
+        <article className="consolePanel">
+          <div className="panelHeader">
+            <div>
+              <h2>회원 관리</h2>
+              <p>계정 비밀번호를 변경하거나 현재 회원을 탈퇴 처리합니다.</p>
+            </div>
+          </div>
+          <MemberManager
+            user={{
+              email: user.email,
+              name: user.name,
+            }}
+            changePasswordAction={changePasswordAction}
+            withdrawUserAction={withdrawUserAction}
+          />
         </article>
       </section>
     </AppShell>
