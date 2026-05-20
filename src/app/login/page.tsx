@@ -4,6 +4,7 @@ import { AuthForm } from "@/components/auth-form";
 import { PasswordResetRequestForm } from "@/components/password-reset-request-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
@@ -11,6 +12,9 @@ export default async function LoginPage() {
   if (user) {
     redirect("/settings");
   }
+
+  const userCount = await prisma.user.count();
+  const needsFirstAdmin = userCount === 0;
 
   return (
     <main className="productLoginShell">
@@ -53,43 +57,10 @@ export default async function LoginPage() {
             <ThemeToggle />
           </div>
 
-          <AuthForm
-            title="로그인"
-            description="등록된 운영자 계정으로 접속합니다."
-            action={loginAction}
-            submitLabel="로그인"
-            fields={[
-              {
-                name: "email",
-                label: "이메일",
-                type: "email",
-                placeholder: "admin@example.com",
-              },
-              {
-                name: "password",
-                label: "비밀번호",
-                type: "password",
-                placeholder: "8자 이상 입력",
-              },
-            ]}
-          />
-
-          <details className="registerDisclosure">
-            <summary>
-              <span>비밀번호를 잊은 경우</span>
-              <strong>비밀번호 찾기</strong>
-            </summary>
-            <PasswordResetRequestForm action={requestPasswordResetAction} />
-          </details>
-
-          <details className="registerDisclosure">
-            <summary>
-              <span>처음 사용하는 경우</span>
-              <strong>관리자 계정 생성</strong>
-            </summary>
+          {needsFirstAdmin ? (
             <AuthForm
               title="첫 관리자 계정 생성"
-              description="운영자 계정이 아직 없다면 여기서 생성합니다."
+              description="등록된 계정이 없습니다. 먼저 운영자 계정을 생성해주세요."
               action={registerAction}
               submitLabel="관리자 계정 만들기"
               fields={[
@@ -113,7 +84,71 @@ export default async function LoginPage() {
                 },
               ]}
             />
-          </details>
+          ) : (
+            <>
+              <AuthForm
+                title="로그인"
+                description="등록된 운영자 계정으로 접속합니다."
+                action={loginAction}
+                submitLabel="로그인"
+                fields={[
+                  {
+                    name: "email",
+                    label: "이메일",
+                    type: "email",
+                    placeholder: "admin@example.com",
+                  },
+                  {
+                    name: "password",
+                    label: "비밀번호",
+                    type: "password",
+                    placeholder: "8자 이상 입력",
+                  },
+                ]}
+              />
+
+              <details className="registerDisclosure">
+                <summary>
+                  <span>비밀번호를 잊은 경우</span>
+                  <strong>비밀번호 찾기</strong>
+                </summary>
+                <PasswordResetRequestForm action={requestPasswordResetAction} />
+              </details>
+
+              <details className="registerDisclosure">
+                <summary>
+                  <span>계정을 추가해야 하는 경우</span>
+                  <strong>관리자 계정 생성</strong>
+                </summary>
+                <AuthForm
+                  title="관리자 계정 생성"
+                  description="추가 운영자 계정을 생성합니다."
+                  action={registerAction}
+                  submitLabel="관리자 계정 만들기"
+                  fields={[
+                    {
+                      name: "name",
+                      label: "이름",
+                      type: "text",
+                      placeholder: "운영자 이름",
+                    },
+                    {
+                      name: "email",
+                      label: "이메일",
+                      type: "email",
+                      placeholder: "admin@example.com",
+                    },
+                    {
+                      name: "password",
+                      label: "비밀번호",
+                      type: "password",
+                      placeholder: "영문, 숫자 포함 8자 이상 권장",
+                    },
+                  ]}
+                />
+              </details>
+            </>
+          )}
         </div>
       </section>
     </main>

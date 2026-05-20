@@ -158,6 +158,14 @@ export async function requestPasswordResetAction(
   _state: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
+    return {
+      success: false,
+      message: "등록된 계정이 없습니다. 먼저 첫 관리자 계정을 생성해주세요.",
+    };
+  }
+
   const validated = passwordResetRequestSchema.safeParse({
     email: formData.get("email"),
   });
