@@ -14,6 +14,23 @@ const DEFAULT_LOOKBACK_DAYS = 30;
 const DEFAULT_NUM_ROWS = 100;
 const DEFAULT_MAX_PAGES_PER_ENDPOINT = 10;
 
+export type CollectionProgress = {
+  phase: string;
+  current: number;
+  total: number;
+  keyword?: string;
+  endpoint?: string;
+  scannedCount: number;
+  importedCount: number;
+  totalMatches: number;
+  excludedCount: number;
+};
+
+type CollectBidNoticesOptions = {
+  signal?: AbortSignal;
+  onProgress?: (progress: CollectionProgress) => void;
+};
+
 type ApiBidNotice = {
   bidNtceNo: string;
   bidNtceOrd: string;
@@ -55,6 +72,23 @@ type G2bApiResponse = {
     };
   };
 };
+
+export class CollectionCancelledError extends Error {
+  constructor() {
+    super("수집이 중지되었습니다.");
+    this.name = "CollectionCancelledError";
+  }
+}
+
+function assertNotCancelled(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new CollectionCancelledError();
+  }
+}
+
+function emitProgress(options: CollectBidNoticesOptions | undefined, progress: CollectionProgress) {
+  options?.onProgress?.(progress);
+}
 
 function normalize(text: string) {
   return text.trim().toLowerCase();
@@ -213,6 +247,7 @@ async function fetchApiPage(
   pageNo: number,
   range: ReturnType<typeof getApiQueryRange>,
   query?: { field: (typeof G2B_API_SEARCH_FIELDS)[number]; keyword: string },
+  signal?: AbortSignal,
 ) {
   const serviceKey = process.env.G2B_API_SERVICE_KEY?.trim();
 
@@ -233,7 +268,7 @@ async function fetchApiPage(
     url.searchParams.set(query.field, query.keyword);
   }
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal });
   if (!response.ok) {
     throw new Error(`나라장터 API 호출 실패: ${response.status}`);
   }
@@ -252,19 +287,42 @@ async function fetchApiPage(
   };
 }
 
-async function loadBidNotices(keywords: string[]) {
+async function loadBidNotices(keywords: string[], options?: CollectBidNoticesOptions) {
   const range = getApiQueryRange();
   const maxPages = toPositiveInteger(
     process.env.G2B_API_MAX_PAGES_PER_ENDPOINT,
     DEFAULT_MAX_PAGES_PER_ENDPOINT,
   );
+  const totalApiCalls =
+    keywords.length * G2B_API_ENDPOINTS.length * G2B_API_SEARCH_FIELDS.length * maxPages;
+  let completedApiCalls = 0;
+  let scannedCount = 0;
   const notices = new Map<string, ApiBidNotice>();
+
+  emitProgress(options, {
+    phase: "공식 API 조회 준비",
+    current: 0,
+    total: totalApiCalls,
+    scannedCount,
+    importedCount: 0,
+    totalMatches: 0,
+    excludedCount: 0,
+  });
 
   for (const keyword of keywords) {
     for (const endpoint of G2B_API_ENDPOINTS) {
       for (const field of G2B_API_SEARCH_FIELDS) {
         for (let pageNo = 1; pageNo <= maxPages; pageNo += 1) {
-          const page = await fetchApiPage(endpoint, pageNo, range, { field, keyword });
+          assertNotCancelled(options?.signal);
+          const page = await fetchApiPage(
+            endpoint,
+            pageNo,
+            range,
+            { field, keyword },
+            options?.signal,
+          );
+          completedApiCalls += 1;
+          scannedCount += page.items.length;
 
           for (const item of page.items) {
             const notice = mapApiItem(item);
@@ -272,6 +330,18 @@ async function loadBidNotices(keywords: string[]) {
               notices.set(`${notice.bidNtceNo}:${notice.bidNtceOrd}`, notice);
             }
           }
+
+          emitProgress(options, {
+            phase: "공식 API 조회 중",
+            current: completedApiCalls,
+            total: totalApiCalls,
+            keyword,
+            endpoint,
+            scannedCount,
+            importedCount: 0,
+            totalMatches: 0,
+            excludedCount: 0,
+          });
 
           if (page.items.length === 0 || pageNo * page.numOfRows >= page.totalCount) {
             break;
@@ -284,10 +354,12 @@ async function loadBidNotices(keywords: string[]) {
   return {
     notices: Array.from(notices.values()),
     source: "official-api" as const,
+    scannedCount,
   };
 }
 
-export async function collectBidNotices(userId: string) {
+export async function collectBidNotices(userId: string, options?: CollectBidNoticesOptions) {
+  assertNotCancelled(options?.signal);
   const keywordRules = await prisma.keywordRule.findMany({
     where: {
       userId,
@@ -310,6 +382,16 @@ export async function collectBidNotices(userId: string) {
   const expandedIncludeKeywords = expandKeywordValues(includeKeywords);
   const expandedExcludeKeywords = expandKeywordValues(excludeKeywords);
 
+  emitProgress(options, {
+    phase: "키워드 설정 확인",
+    current: 0,
+    total: 1,
+    scannedCount: 0,
+    importedCount: 0,
+    totalMatches: 0,
+    excludedCount: 0,
+  });
+
   if (expandedIncludeKeywords.length === 0) {
     return {
       importedCount: 0,
@@ -317,17 +399,41 @@ export async function collectBidNotices(userId: string) {
       excludedCount: 0,
       keywords: [],
       source: "official-api" as const,
+      scannedCount: 0,
     };
   }
 
-  const { notices, source } = await loadBidNotices(expandedIncludeKeywords);
+  const { notices, source, scannedCount } = await loadBidNotices(expandedIncludeKeywords, options);
 
   let importedCount = 0;
   let totalMatches = 0;
   let excludedCount = 0;
+  let processedNotices = 0;
+
+  emitProgress(options, {
+    phase: "필터링 및 저장 준비",
+    current: 0,
+    total: notices.length,
+    scannedCount,
+    importedCount,
+    totalMatches,
+    excludedCount,
+  });
 
   for (const notice of notices) {
+    assertNotCancelled(options?.signal);
+    processedNotices += 1;
+
     if (!isNoticeOpenToday(notice)) {
+      emitProgress(options, {
+        phase: "오늘 포함 공고 필터링",
+        current: processedNotices,
+        total: notices.length,
+        scannedCount,
+        importedCount,
+        totalMatches,
+        excludedCount,
+      });
       continue;
     }
 
@@ -337,6 +443,15 @@ export async function collectBidNotices(userId: string) {
     );
 
     if (!matchedKeyword) {
+      emitProgress(options, {
+        phase: "키워드 매칭 중",
+        current: processedNotices,
+        total: notices.length,
+        scannedCount,
+        importedCount,
+        totalMatches,
+        excludedCount,
+      });
       continue;
     }
 
@@ -346,6 +461,15 @@ export async function collectBidNotices(userId: string) {
 
     if (blockedKeyword) {
       excludedCount += 1;
+      emitProgress(options, {
+        phase: "제외 키워드 필터링",
+        current: processedNotices,
+        total: notices.length,
+        scannedCount,
+        importedCount,
+        totalMatches,
+        excludedCount,
+      });
       continue;
     }
 
@@ -404,7 +528,28 @@ export async function collectBidNotices(userId: string) {
       });
       importedCount += 1;
     }
+
+    emitProgress(options, {
+      phase: "공고 저장 중",
+      current: processedNotices,
+      total: notices.length,
+      keyword: matchedKeyword,
+      scannedCount,
+      importedCount,
+      totalMatches,
+      excludedCount,
+    });
   }
+
+  emitProgress(options, {
+    phase: "수집 완료",
+    current: notices.length,
+    total: notices.length,
+    scannedCount,
+    importedCount,
+    totalMatches,
+    excludedCount,
+  });
 
   return {
     importedCount,
@@ -412,5 +557,6 @@ export async function collectBidNotices(userId: string) {
     keywords: expandedIncludeKeywords,
     excludedCount,
     source,
+    scannedCount,
   };
 }

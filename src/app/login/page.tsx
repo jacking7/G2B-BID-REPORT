@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
-import { loginAction, registerAction } from "@/app/actions/auth";
+import { loginAction, registerAction, requestPasswordResetAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
+import { PasswordResetRequestForm } from "@/components/password-reset-request-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -72,6 +73,14 @@ export default async function LoginPage() {
               },
             ]}
           />
+
+          <details className="registerDisclosure">
+            <summary>
+              <span>비밀번호를 잊은 경우</span>
+              <strong>비밀번호 찾기</strong>
+            </summary>
+            <PasswordResetRequestForm action={requestPasswordResetAction} />
+          </details>
 
           <details className="registerDisclosure">
             <summary>

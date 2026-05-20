@@ -1,9 +1,10 @@
-import { collectBidNoticesAction, sendBidReportAction } from "@/app/actions/bids";
+import { sendBidReportAction } from "@/app/actions/bids";
 import { AppShell } from "@/components/app-shell";
 import { ManualActions } from "@/components/manual-actions";
 import { ResultsFilterForm } from "@/components/results-filter-form";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
+import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +70,15 @@ export default async function ResultsPage({
       : {}),
   };
 
-  const [results, keywordCount, excludeKeywordCount, recipientCount, pendingMailCount, mailHistories, schedule, retryableMailCount] = await Promise.all([
+  const [
+    results,
+    keywordRules,
+    recipients,
+    pendingMailCount,
+    mailHistories,
+    schedule,
+    retryableMailCount,
+  ] = await Promise.all([
     prisma.collectedResult.findMany({
       where: resultWhere,
       orderBy: {
@@ -79,24 +88,30 @@ export default async function ResultsPage({
         bidNotice: true,
       },
     }),
-    prisma.keywordRule.count({
+    prisma.keywordRule.findMany({
       where: {
         userId: user.id,
         active: true,
-        type: "include",
+      },
+      select: {
+        keyword: true,
+        type: true,
+      },
+      orderBy: {
+        createdAt: "asc",
       },
     }),
-    prisma.keywordRule.count({
+    prisma.recipient.findMany({
       where: {
         userId: user.id,
         active: true,
-        type: "exclude",
       },
-    }),
-    prisma.recipient.count({
-      where: {
-        userId: user.id,
-        active: true,
+      select: {
+        name: true,
+        email: true,
+      },
+      orderBy: {
+        createdAt: "asc",
       },
     }),
     prisma.collectedResult.count({
@@ -132,6 +147,13 @@ export default async function ResultsPage({
       },
     }),
   ]);
+  const includeKeywords = expandKeywordValues(
+    keywordRules.filter((rule) => rule.type === "include").map((rule) => rule.keyword),
+  );
+  const excludeKeywords = expandKeywordValues(
+    keywordRules.filter((rule) => rule.type === "exclude").map((rule) => rule.keyword),
+  );
+  const schedulerEnabled = process.env.ENABLE_INTERNAL_SCHEDULER === "true";
 
   return (
     <AppShell
@@ -158,12 +180,12 @@ export default async function ResultsPage({
         </article>
         <article className="metricTile">
           <span>활성 수신자</span>
-          <strong>{recipientCount}</strong>
+          <strong>{recipients.length}</strong>
         </article>
         <article className="metricTile">
           <span>포함/제외 키워드</span>
           <strong>
-            {keywordCount}/{excludeKeywordCount}
+            {includeKeywords.length}/{excludeKeywords.length}
           </strong>
         </article>
       </section>
@@ -176,10 +198,41 @@ export default async function ResultsPage({
               <p>수집 실행 후 미발송 결과를 Excel 첨부 메일로 보냅니다.</p>
             </div>
           </div>
-          <ManualActions
-            collectAction={collectBidNoticesAction}
-            sendAction={sendBidReportAction}
-          />
+          <ManualActions sendAction={sendBidReportAction} />
+          <div className="settingsSnapshot">
+            <div className="snapshotGroup">
+              <strong>포함 키워드</strong>
+              <div className="chipList">
+                {includeKeywords.length > 0 ? (
+                  includeKeywords.map((item) => <span key={`include-${item}`}>{item}</span>)
+                ) : (
+                  <em>없음</em>
+                )}
+              </div>
+            </div>
+            <div className="snapshotGroup">
+              <strong>제외 키워드</strong>
+              <div className="chipList">
+                {excludeKeywords.length > 0 ? (
+                  excludeKeywords.map((item) => <span key={`exclude-${item}`}>{item}</span>)
+                ) : (
+                  <em>없음</em>
+                )}
+              </div>
+            </div>
+            <div className="snapshotGroup">
+              <strong>수신자</strong>
+              <div className="chipList">
+                {recipients.length > 0 ? (
+                  recipients.map((item) => (
+                    <span key={item.email}>{item.name ? `${item.name} · ${item.email}` : item.email}</span>
+                  ))
+                ) : (
+                  <em>없음</em>
+                )}
+              </div>
+            </div>
+          </div>
           {pendingMailCount > 0 && retryableMailCount > 0 ? (
             <p className="muted compactMuted">
               이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 미발송 {pendingMailCount}건은 위
@@ -195,13 +248,31 @@ export default async function ResultsPage({
               <p>저장된 사용자별 수집/발송 시간을 표시합니다.</p>
             </div>
           </div>
-          <ul className="list">
-            <li>내부 스케줄러: {process.env.ENABLE_INTERNAL_SCHEDULER === "true" ? "활성" : "비활성"}</li>
-            <li>수집 시간: {schedule?.collectTime ?? "미설정"}</li>
-            <li>발송 시간: {schedule?.sendTime ?? "미설정"}</li>
-            <li>시간대: {schedule?.timezone ?? "미설정"}</li>
-            <li>메일 재시도 가능 이력 수: {retryableMailCount}건</li>
-          </ul>
+          <div className="automationStatusBoard">
+            <div className={schedulerEnabled ? "statusDial active" : "statusDial"}>
+              <span />
+              <strong>{schedulerEnabled ? "활성" : "비활성"}</strong>
+              <small>내부 스케줄러</small>
+            </div>
+            <div className="automationTimeline">
+              <div>
+                <span>수집</span>
+                <strong>{schedule?.collectTime ?? "--:--"}</strong>
+              </div>
+              <div>
+                <span>발송</span>
+                <strong>{schedule?.sendTime ?? "--:--"}</strong>
+              </div>
+              <div>
+                <span>시간대</span>
+                <strong>{schedule?.timezone ?? "미설정"}</strong>
+              </div>
+              <div>
+                <span>재시도</span>
+                <strong>{retryableMailCount}건</strong>
+              </div>
+            </div>
+          </div>
         </article>
       </section>
 

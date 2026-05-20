@@ -7,7 +7,7 @@ import {
 } from "@/lib/report";
 import { getTodayDateLabel } from "@/lib/format";
 
-function getMailConfig() {
+export function getMailConfig() {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT ?? "587");
   const user = process.env.SMTP_USER;
@@ -28,6 +28,40 @@ function getMailConfig() {
     },
     from,
   };
+}
+
+export async function sendPasswordResetLink(input: {
+  email: string;
+  resetUrl: string;
+  expiresMinutes: number;
+}) {
+  const config = getMailConfig();
+  if (!config) {
+    return { sent: false };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.auth,
+  });
+
+  await transporter.sendMail({
+    from: config.from,
+    to: input.email,
+    subject: "[G2B] 비밀번호 재설정",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+        <h2>G2B Bid Report 비밀번호 재설정</h2>
+        <p>아래 버튼을 눌러 새 비밀번호를 설정해주세요.</p>
+        <p><a href="${input.resetUrl}" style="display:inline-block;padding:10px 14px;background:#bd93f9;color:#0f111a;text-decoration:none;border-radius:6px;font-weight:700">비밀번호 재설정</a></p>
+        <p>이 링크는 ${input.expiresMinutes}분 동안만 사용할 수 있습니다.</p>
+      </div>
+    `,
+  });
+
+  return { sent: true };
 }
 
 export async function sendPendingReport(userId: string) {
