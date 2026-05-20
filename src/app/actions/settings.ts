@@ -40,6 +40,7 @@ const scheduleSchema = z.object({
   collectTime: z.string().regex(/^\d{2}:\d{2}$/, "수집 시간을 확인해주세요."),
   sendTime: z.string().regex(/^\d{2}:\d{2}$/, "발송 시간을 확인해주세요."),
   timezone: z.string().trim().min(1, "시간대를 입력해주세요.").max(50),
+  active: z.boolean(),
 });
 
 export async function addKeywordAction(
@@ -205,6 +206,7 @@ export async function saveScheduleAction(
     collectTime: formData.get("collectTime"),
     sendTime: formData.get("sendTime"),
     timezone: formData.get("timezone"),
+    active: formData.get("active") === "on",
   });
 
   if (!validated.success) {
@@ -217,11 +219,14 @@ export async function saveScheduleAction(
     };
   }
 
-  const { collectTime, sendTime, timezone } = validated.data;
+  const { collectTime, sendTime, timezone, active } = validated.data;
 
   const existing = await prisma.scheduleSetting.findFirst({
     where: {
       userId: user.id,
+    },
+    orderBy: {
+      updatedAt: "desc",
     },
   });
 
@@ -234,7 +239,7 @@ export async function saveScheduleAction(
         collectTime,
         sendTime,
         timezone,
-        active: true,
+        active,
       },
     });
   } else {
@@ -243,7 +248,7 @@ export async function saveScheduleAction(
         collectTime,
         sendTime,
         timezone,
-        active: true,
+        active,
         userId: user.id,
       },
     });

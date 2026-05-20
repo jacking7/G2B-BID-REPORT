@@ -7,7 +7,7 @@
 - Next.js 16 App Router 기반 웹 앱
 - Prisma + SQLite 기반 데이터 저장
 - 이메일/비밀번호 로그인
-- 사용자별 포함 키워드, 제외 키워드, 수신자, 수집/발송 시간 관리
+- 사용자별 포함 키워드, 제외 키워드, 수신자, 자동 실행 ON/OFF, 수집/발송 시간 관리
 - 조달청 나라장터 입찰공고정보서비스 공식 Open API 기반 공고 수집
 - 수집 결과 조회, 날짜/상태/키워드 필터, Excel 다운로드
 - SMTP 메일 발송 및 발송 이력 저장
@@ -75,6 +75,8 @@ npm run dev
 | `ENABLE_INTERNAL_SCHEDULER` | 앱 내부 스케줄러 사용 여부 |
 | `INTERNAL_JOB_TOKEN` | 외부 작업 API 인증 토큰 |
 | `APP_BASE_URL` | `npm run job:*`에서 사용할 앱 URL |
+
+`ENABLE_INTERNAL_SCHEDULER`는 서버 전체 스위치입니다. `/settings`의 자동 실행 ON/OFF는 사용자별 스케줄 실행 여부이며, 내부 스케줄러와 외부 작업 API 모두 활성 스케줄 사용자만 처리합니다.
 
 Hiworks SMTP 예시:
 

@@ -62,15 +62,15 @@ export default async function SettingsPage() {
     prisma.scheduleSetting.findFirst({
       where: {
         userId: user.id,
-        active: true,
       },
       orderBy: {
-        createdAt: "desc",
+        updatedAt: "desc",
       },
       select: {
         collectTime: true,
         sendTime: true,
         timezone: true,
+        active: true,
       },
     }),
   ]);

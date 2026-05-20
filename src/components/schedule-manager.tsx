@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 type ScheduleActionState = {
   message?: string;
@@ -12,6 +12,7 @@ type ScheduleManagerProps = {
     collectTime: string;
     sendTime: string;
     timezone: string;
+    active: boolean;
   } | null;
   saveAction: (
     state: ScheduleActionState,
@@ -23,6 +24,7 @@ const initialState: ScheduleActionState = {};
 
 export function ScheduleManager({ schedule, saveAction }: ScheduleManagerProps) {
   const [state, formAction, pending] = useActionState(saveAction, initialState);
+  const [active, setActive] = useState(schedule?.active ?? true);
 
   return (
     <div className="settingsSection">
@@ -55,6 +57,19 @@ export function ScheduleManager({ schedule, saveAction }: ScheduleManagerProps) 
             defaultValue={schedule?.timezone ?? "Asia/Seoul"}
             placeholder="Asia/Seoul"
             required
+          />
+        </label>
+
+        <label className="toggleField">
+          <span>
+            <strong>자동 실행</strong>
+            <small>{active ? "ON" : "OFF"}</small>
+          </span>
+          <input
+            type="checkbox"
+            name="active"
+            checked={active}
+            onChange={(event) => setActive(event.currentTarget.checked)}
           />
         </label>
 

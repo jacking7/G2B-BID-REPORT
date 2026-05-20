@@ -132,7 +132,6 @@ export default async function ResultsPage({
     prisma.scheduleSetting.findFirst({
       where: {
         userId: user.id,
-        active: true,
       },
       orderBy: {
         updatedAt: "desc",
@@ -153,7 +152,14 @@ export default async function ResultsPage({
   const excludeKeywords = expandKeywordValues(
     keywordRules.filter((rule) => rule.type === "exclude").map((rule) => rule.keyword),
   );
-  const schedulerEnabled = process.env.ENABLE_INTERNAL_SCHEDULER === "true";
+  const internalSchedulerEnabled = process.env.ENABLE_INTERNAL_SCHEDULER === "true";
+  const userScheduleEnabled = schedule?.active ?? false;
+  const automationEnabled = internalSchedulerEnabled && userScheduleEnabled;
+  const automationStatusNote = !internalSchedulerEnabled
+    ? "서버 OFF"
+    : userScheduleEnabled
+      ? "자동 실행"
+      : "사용자 OFF";
 
   return (
     <AppShell
@@ -245,16 +251,20 @@ export default async function ResultsPage({
           <div className="panelHeader">
             <div>
               <h2>자동 실행 상태</h2>
-              <p>저장된 사용자별 수집/발송 시간을 표시합니다.</p>
+              <p>저장된 사용자별 자동 실행 설정과 수집/발송 시간을 표시합니다.</p>
             </div>
           </div>
           <div className="automationStatusBoard">
-            <div className={schedulerEnabled ? "statusDial active" : "statusDial"}>
+            <div className={automationEnabled ? "statusDial active" : "statusDial"}>
               <span />
-              <strong>{schedulerEnabled ? "활성" : "비활성"}</strong>
-              <small>내부 스케줄러</small>
+              <strong>{automationEnabled ? "활성" : "비활성"}</strong>
+              <small>{automationStatusNote}</small>
             </div>
             <div className="automationTimeline">
+              <div>
+                <span>자동 실행</span>
+                <strong>{userScheduleEnabled ? "ON" : "OFF"}</strong>
+              </div>
               <div>
                 <span>수집</span>
                 <strong>{schedule?.collectTime ?? "--:--"}</strong>
