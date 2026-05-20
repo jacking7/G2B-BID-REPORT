@@ -43,6 +43,11 @@ const scheduleSchema = z.object({
   active: z.boolean(),
 });
 
+const scheduleActiveSchema = z.object({
+  active: z.enum(["true", "false"]),
+  returnTo: z.string().optional(),
+});
+
 export async function addKeywordAction(
   _state: KeywordActionState,
   formData: FormData,
@@ -256,4 +261,57 @@ export async function saveScheduleAction(
 
   revalidatePath("/settings");
   redirect("/settings");
+}
+
+export async function updateScheduleActiveAction(formData: FormData) {
+  const user = await requireUser();
+
+  const validated = scheduleActiveSchema.safeParse({
+    active: formData.get("active"),
+    returnTo: formData.get("returnTo") || undefined,
+  });
+
+  const returnTo =
+    validated.success && validated.data.returnTo?.startsWith("/results")
+      ? validated.data.returnTo
+      : "/results";
+
+  if (!validated.success) {
+    redirect(returnTo);
+  }
+
+  const active = validated.data.active === "true";
+  const existing = await prisma.scheduleSetting.findFirst({
+    where: {
+      userId: user.id,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+
+  if (existing) {
+    await prisma.scheduleSetting.update({
+      where: {
+        id: existing.id,
+      },
+      data: {
+        active,
+      },
+    });
+  } else {
+    await prisma.scheduleSetting.create({
+      data: {
+        collectTime: "18:00",
+        sendTime: "09:00",
+        timezone: "Asia/Seoul",
+        active,
+        userId: user.id,
+      },
+    });
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/results");
+  redirect(returnTo);
 }

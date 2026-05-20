@@ -971,7 +971,7 @@ a {
   gap: 10px;
 }
 
-.automationTimeline div {
+.automationTimeline > div {
   min-height: 66px;
   display: grid;
   align-content: center;
@@ -990,6 +990,48 @@ a {
 
 .automationTimeline strong {
   font-size: 16px;
+}
+
+.automationControlTile {
+  grid-column: 1 / -1;
+}
+
+.automationToggleActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.automationModeForm {
+  display: grid;
+}
+
+.statusOption {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.statusOption.active {
+  border-color: var(--success);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.statusOption.danger.active {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.statusOption:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .primaryButton,

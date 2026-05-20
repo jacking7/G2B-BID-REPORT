@@ -1,4 +1,5 @@
 import { sendBidReportAction } from "@/app/actions/bids";
+import { updateScheduleActiveAction } from "@/app/actions/settings";
 import { AppShell } from "@/components/app-shell";
 import { ManualActions } from "@/components/manual-actions";
 import { ResultsFilterForm } from "@/components/results-filter-form";
@@ -27,6 +28,20 @@ function getKoreanDateBounds(value: string) {
     start: new Date(`${value}T00:00:00+09:00`),
     end: new Date(`${value}T23:59:59.999+09:00`),
   };
+}
+
+function getResultsReturnPath(params: Record<string, string | string[] | undefined>) {
+  const nextParams = new URLSearchParams();
+
+  for (const key of ["q", "status", "keyword", "from", "to"]) {
+    const value = params[key];
+    if (typeof value === "string" && value) {
+      nextParams.set(key, value);
+    }
+  }
+
+  const queryString = nextParams.toString();
+  return queryString ? `/results?${queryString}` : "/results";
 }
 
 export default async function ResultsPage({
@@ -160,6 +175,7 @@ export default async function ResultsPage({
     : userScheduleEnabled
       ? "자동 실행"
       : "사용자 OFF";
+  const resultsReturnPath = getResultsReturnPath(params);
 
   return (
     <AppShell
@@ -251,7 +267,7 @@ export default async function ResultsPage({
           <div className="panelHeader">
             <div>
               <h2>자동 실행 상태</h2>
-              <p>저장된 사용자별 자동 실행 설정과 수집/발송 시간을 표시합니다.</p>
+              <p>사용자 설정과 서버 스케줄러 상태를 분리해서 표시합니다.</p>
             </div>
           </div>
           <div className="automationStatusBoard">
@@ -261,9 +277,36 @@ export default async function ResultsPage({
               <small>{automationStatusNote}</small>
             </div>
             <div className="automationTimeline">
+              <div className="automationControlTile">
+                <span>사용자 설정</span>
+                <div className="automationToggleActions">
+                  <form action={updateScheduleActiveAction} className="automationModeForm">
+                    <input type="hidden" name="active" value="true" />
+                    <input type="hidden" name="returnTo" value={resultsReturnPath} />
+                    <button
+                      type="submit"
+                      className={userScheduleEnabled ? "statusOption active" : "statusOption"}
+                      disabled={userScheduleEnabled}
+                    >
+                      활성
+                    </button>
+                  </form>
+                  <form action={updateScheduleActiveAction} className="automationModeForm">
+                    <input type="hidden" name="active" value="false" />
+                    <input type="hidden" name="returnTo" value={resultsReturnPath} />
+                    <button
+                      type="submit"
+                      className={userScheduleEnabled ? "statusOption" : "statusOption danger active"}
+                      disabled={!userScheduleEnabled}
+                    >
+                      비활성
+                    </button>
+                  </form>
+                </div>
+              </div>
               <div>
-                <span>자동 실행</span>
-                <strong>{userScheduleEnabled ? "ON" : "OFF"}</strong>
+                <span>서버 스케줄러</span>
+                <strong>{internalSchedulerEnabled ? "ON" : "OFF"}</strong>
               </div>
               <div>
                 <span>수집</span>
