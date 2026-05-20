@@ -240,11 +240,6 @@ npm run start
 - Confirm the sender account allows SMTP login.
 - Empty SMTP settings intentionally create skipped mail history instead of sending.
 
-## References
-
-- [johannesjo/parallel-code](https://github.com/johannesjo/parallel-code)
-- [Yeachan-Heo/oh-my-codex](https://github.com/Yeachan-Heo/oh-my-codex)
-
 ## License
 
-No license has been selected yet. Add one before distributing or accepting external contributions.
+MIT
