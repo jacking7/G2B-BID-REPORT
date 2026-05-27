@@ -94,7 +94,7 @@ export async function loginAction(
 
   if (!user) {
     return {
-      message: "일치하는 사용자가 없습니다.",
+      message: "이메일 또는 비밀번호가 올바르지 않습니다.",
     };
   }
 
@@ -102,7 +102,7 @@ export async function loginAction(
 
   if (!isValid) {
     return {
-      message: "비밀번호가 올바르지 않습니다.",
+      message: "이메일 또는 비밀번호가 올바르지 않습니다.",
     };
   }
 
@@ -130,6 +130,13 @@ export async function registerAction(
     return {
       errors: validated.error.flatten().fieldErrors,
       message: "입력값을 다시 확인해주세요.",
+    };
+  }
+
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    return {
+      message: "추가 운영자 계정은 시스템 관리자에게 요청해주세요.",
     };
   }
 

@@ -15,7 +15,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "G2B Bid Report",
-  description: "나라장터 입찰공고 자동 수집·메일 발송 서비스",
+  description: "승인된 운영자를 위한 나라장터 입찰공고 리포트 내부 운영 콘솔",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 const themeScript = `

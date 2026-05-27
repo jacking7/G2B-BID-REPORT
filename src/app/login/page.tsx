@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { loginAction, registerAction, requestPasswordResetAction } from "@/app/actions/auth";
+import { loginAction, registerAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
-import { PasswordResetRequestForm } from "@/components/password-reset-request-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -85,10 +84,10 @@ export default async function LoginPage() {
               ]}
             />
           ) : (
-            <>
+            <div className="operatorLoginStack">
               <AuthForm
                 title="로그인"
-                description="등록된 운영자 계정으로 접속합니다."
+                description="승인된 내부 운영자 계정으로만 접속할 수 있습니다."
                 action={loginAction}
                 submitLabel="로그인"
                 fields={[
@@ -107,47 +106,15 @@ export default async function LoginPage() {
                 ]}
               />
 
-              <details className="registerDisclosure">
-                <summary>
-                  <span>비밀번호를 잊은 경우</span>
-                  <strong>비밀번호 찾기</strong>
-                </summary>
-                <PasswordResetRequestForm action={requestPasswordResetAction} />
-              </details>
-
-              <details className="registerDisclosure">
-                <summary>
-                  <span>계정을 추가해야 하는 경우</span>
-                  <strong>관리자 계정 생성</strong>
-                </summary>
-                <AuthForm
-                  title="관리자 계정 생성"
-                  description="추가 운영자 계정을 생성합니다."
-                  action={registerAction}
-                  submitLabel="관리자 계정 만들기"
-                  fields={[
-                    {
-                      name: "name",
-                      label: "이름",
-                      type: "text",
-                      placeholder: "운영자 이름",
-                    },
-                    {
-                      name: "email",
-                      label: "이메일",
-                      type: "email",
-                      placeholder: "admin@example.com",
-                    },
-                    {
-                      name: "password",
-                      label: "비밀번호",
-                      type: "password",
-                      placeholder: "영문, 숫자 포함 8자 이상 권장",
-                    },
-                  ]}
-                />
-              </details>
-            </>
+              <div className="operatorNotice" role="note">
+                <strong>내부 운영 콘솔 안내</strong>
+                <p>
+                  이 화면은 G2B Bid Report 운영자 전용입니다. 일반 사용자 가입,
+                  결제, 외부 계정 수집을 제공하지 않습니다. 계정 추가나 비밀번호
+                  재설정은 시스템 관리자에게 요청해주세요.
+                </p>
+              </div>
+            </div>
           )}
         </div>
       </section>

@@ -586,6 +586,29 @@ a {
   justify-content: flex-end;
 }
 
+.operatorLoginStack {
+  display: grid;
+  gap: 18px;
+}
+
+.operatorNotice {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.operatorNotice strong {
+  font-size: 13px;
+}
+
+.operatorNotice p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .registerDisclosure {
   display: grid;
   gap: 18px;
