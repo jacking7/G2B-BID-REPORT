@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { loginAction, registerAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
+import { LegalFooter } from "@/components/legal-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -118,6 +119,8 @@ export default async function LoginPage() {
           )}
         </div>
       </section>
+
+      <LegalFooter />
     </main>
   );
 }

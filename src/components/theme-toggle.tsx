@@ -3,9 +3,13 @@
 import { useSyncExternalStore } from "react";
 
 const themeStorageKey = "g2b-theme";
-const themes = ["light", "dracula"] as const;
 
-type Theme = (typeof themes)[number];
+type Theme = "light" | "dracula";
+
+const themeOptions = [
+  { key: "light", icon: "☀", label: "라이트 테마" },
+  { key: "dracula", icon: "☾", label: "드라큘라 테마" },
+] as const;
 
 function getStoredTheme(): Theme {
   if (typeof window === "undefined") {
@@ -37,16 +41,22 @@ export function ThemeToggle() {
 
   return (
     <div className="themeToggle" role="group" aria-label="테마 선택">
-      {themes.map((item) => (
+      {themeOptions.map((item) => (
         <button
-          key={item}
+          key={item.key}
           type="button"
-          className={item === theme ? "active" : ""}
+          className={item.key === theme ? "active" : ""}
+          aria-label={item.label}
+          aria-pressed={item.key === theme}
+          title={item.label}
           onClick={() => {
-            applyTheme(item);
+            applyTheme(item.key);
           }}
         >
-          {item === "light" ? "White" : "Dracula"}
+          <span className="themeIcon" aria-hidden="true">
+            {item.icon}
+          </span>
+          <span className="srOnly">{item.label}</span>
         </button>
       ))}
     </div>

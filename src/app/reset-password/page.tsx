@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { resetPasswordAction } from "@/app/actions/auth";
+import { LegalFooter } from "@/components/legal-footer";
 import { PasswordResetForm } from "@/components/password-reset-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -53,6 +54,8 @@ export default async function ResetPasswordPage({
           )}
         </div>
       </section>
+
+      <LegalFooter />
     </main>
   );
 }
