@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://g2b-report.duckdns.org/"><strong>Live Example</strong></a>
+  <a href="https://g2b-report.duckdns.org/"><strong>Live Site</strong></a>
   ·
   <a href="#features">Features</a>
   ·
@@ -25,15 +25,28 @@ G2B Bid Report is a self-hosted web console for collecting Korea G2B public proc
 
 The project is built as a small operational MVP: one app, one database, explicit environment variables, and simple deployment primitives.
 
-## Live Example
+## Live Site
 
-Try the public example deployment:
+Production is published at:
 
 ```text
 https://g2b-report.duckdns.org/
 ```
 
-The example page shows the production-style console flow while keeping runtime secrets, local database files, and deployment credentials out of the repository.
+The root route redirects to `/login`. Public trust and legal surfaces are available without exposing runtime secrets, local database files, or deployment credentials.
+
+| Public URL | Purpose |
+| --- | --- |
+| `/login` | Operator login and first account bootstrap |
+| `/privacy` | Korean privacy notice for the internal console |
+| `/terms` | Service notice, contact path, license, and responsibility limits |
+| `/api/health` | Basic database health check |
+
+Current production smoke target:
+
+```bash
+curl https://g2b-report.duckdns.org/api/health
+```
 
 ## Features
 
@@ -48,7 +61,9 @@ The example page shows the production-style console flow while keeping runtime s
 - SMTP email report sending with send history
 - Password reset, password change, and account withdrawal
 - SQLite + Prisma data layer
-- Light and Dracula-style dark themes
+- Light and Dracula-style dark themes with icon-only toggle controls
+- In-app operator manual at `/manual`
+- Legal footer with privacy, service notice, MIT license, and GitHub contact links
 
 ## Public-Safe Repository Notes
 
@@ -85,7 +100,13 @@ Use `.env.example` as the public template and keep real values only in the runti
 | `/reset-password` | Password reset by token |
 | `/settings` | Keywords, recipients, schedule, and account management |
 | `/results` | Manual collection, filters, exports, mail send, status overview |
+| `/manual` | Operator workflow manual |
+| `/privacy` | Privacy notice |
+| `/terms` | Service notice, contact, and license information |
 | `/api/health` | Database health check |
+| `/api/collection/start` | Authenticated manual collection start endpoint |
+| `/api/collection/status` | Authenticated manual collection progress endpoint |
+| `/api/collection/cancel` | Authenticated manual collection cancel endpoint |
 | `/api/jobs/collect` | Authenticated external collection job endpoint |
 | `/api/jobs/send` | Authenticated external mail job endpoint |
 
@@ -119,7 +140,7 @@ Copy `.env.example` to `.env` and fill in local or production values.
 | `SMTP_PORT` | SMTP server port |
 | `SMTP_USER` | SMTP username |
 | `SMTP_PASS` | SMTP password or app password |
-| `MAIL_FROM` | Email sender address |
+| `MAIL_FROM` | Email sender address, optionally with display name such as `G2B-Report <bot@example.com>` |
 | `G2B_API_SERVICE_KEY` | Official G2B Open API service key |
 | `G2B_API_LOOKBACK_DAYS` | Number of registration days to search backwards |
 | `G2B_API_NUM_ROWS` | Rows per API page |
@@ -130,6 +151,16 @@ Copy `.env.example` to `.env` and fill in local or production values.
 | `APP_BASE_URL` | Base URL used by job scripts and password reset links |
 
 If SMTP variables are empty, email sending is skipped and recorded as a skipped mail history entry.
+
+For Gmail SMTP, use an app password instead of the Google account password:
+
+```env
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="465"
+SMTP_USER="your-account@gmail.com"
+SMTP_PASS="your-16-character-app-password"
+MAIL_FROM="G2B-Report <your-account@gmail.com>"
+```
 
 ## Collection Rules
 
@@ -249,6 +280,31 @@ npm run build
 npm run start
 ```
 
+## GitHub-Based Production Deploy
+
+The current production server deploys from the GitHub `main` branch.
+
+```bash
+git fetch origin
+git pull --ff-only origin main
+npm run build
+pm2 restart g2b-bid-report --update-env
+curl http://localhost:3000/api/health
+```
+
+Public post-deploy smoke check:
+
+```bash
+curl https://g2b-report.duckdns.org/api/health
+curl -I https://g2b-report.duckdns.org/
+```
+
+Expected behavior:
+
+- `/api/health` returns `{"ok":true,"database":"connected",...}`
+- `/` redirects to `/login`
+- The PM2 process `g2b-bid-report` is `online`
+
 ## Troubleshooting
 
 ### No Collection Results
@@ -269,6 +325,8 @@ npm run start
 
 - Confirm SMTP variables are configured.
 - Confirm the sender account allows SMTP login.
+- For Gmail, confirm a Google app password is used and `SMTP_PASS` contains the compact 16-character password.
+- Confirm `MAIL_FROM` is either a plain address or a valid display-name format such as `G2B-Report <account@gmail.com>`.
 - Empty SMTP settings intentionally create skipped mail history instead of sending.
 
 ## License
