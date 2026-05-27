@@ -109,6 +109,13 @@ Use `.env.example` as the public template and keep real values only in the runti
 | `/api/collection/cancel` | Authenticated manual collection cancel endpoint |
 | `/api/jobs/collect` | Authenticated external collection job endpoint |
 | `/api/jobs/send` | Authenticated external mail job endpoint |
+| `/api/mobile/auth/login` | Mobile app email/password login endpoint |
+| `/api/mobile/dashboard` | Mobile app dashboard summary endpoint |
+| `/api/mobile/collection/start` | Mobile app manual collection start endpoint |
+| `/api/mobile/reports/send` | Mobile app pending report send endpoint |
+
+The native mobile app lives in the separate `G2B-BID-REPORT-MOBILE` repository,
+but these `/api/mobile/*` routes are owned and deployed by this server app.
 
 ## Quick Start
 

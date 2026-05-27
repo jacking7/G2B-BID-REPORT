@@ -137,14 +137,36 @@ async function decryptSession(token?: string) {
   }
 }
 
-export async function createSession(user: AuthUser) {
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const token = await encryptSession({
+export async function createSessionToken(user: AuthUser) {
+  return encryptSession({
     userId: user.id,
     email: user.email,
     role: user.role,
     name: user.name,
   });
+}
+
+export async function getUserFromSessionToken(token?: string): Promise<AuthUser | null> {
+  const session = await decryptSession(token);
+
+  if (!session?.userId) {
+    return null;
+  }
+
+  return prisma.user.findUnique({
+    where: { id: session.userId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+    },
+  });
+}
+
+export async function createSession(user: AuthUser) {
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const token = await createSessionToken(user);
 
   const cookieStore = await cookies();
   cookieStore.set(sessionCookieName, token, {
