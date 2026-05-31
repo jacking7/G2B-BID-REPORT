@@ -27,7 +27,8 @@
 - Content hierarchy: page title, compact actions, section headers, forms/tables, status messages
 
 ## Design principles
-- Principle 1: Prefer flat sections divided by spacing and rules over card containers.
+- Principle 1: Prefer flat page sections divided by spacing and rules over decorative card containers.
+- Principle 1a: Preserve explicit boundaries for repeated operational data such as tables, notice rows, histories, and status lists.
 - Principle 2: Keep real controls visibly interactive; remove decorative containers around controls.
 - Tradeoffs: The UI should feel less ornamental even if individual sections have fewer boxed boundaries.
 

@@ -21,6 +21,7 @@
   --success: #50fa7b;
   --success-soft: rgba(80, 250, 123, 0.14);
   --warning: #ffb86c;
+  --warning-soft: rgba(255, 184, 108, 0.14);
   --warning-strong: #f59e0b;
   --danger: #ff5555;
   --danger-soft: rgba(255, 85, 85, 0.14);
@@ -49,6 +50,7 @@
   --success: #15803d;
   --success-soft: rgba(22, 163, 74, 0.1);
   --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.12);
   --warning-strong: #d97706;
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.1);
@@ -254,15 +256,15 @@ a {
 }
 
 .topSearch {
-  width: min(520px, 45vw);
-  min-height: 38px;
+  width: auto;
+  min-height: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--field);
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
 }
 
@@ -282,13 +284,13 @@ a {
 }
 
 .userBadge {
-  min-height: 38px;
+  min-height: auto;
   display: grid;
   align-content: center;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .userBadge span {
@@ -940,6 +942,10 @@ a {
 .resultsCard {
   display: grid;
   gap: 14px;
+}
+
+.resultsCard {
+  padding-bottom: 24px;
 }
 
 .compactAuthForm {
@@ -1612,42 +1618,92 @@ a {
 
 .tableWrap {
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
 }
 
 .resultsTable {
   width: 100%;
   min-width: 980px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .resultsTable th,
 .resultsTable td {
-  padding: 10px 12px;
+  padding: 11px 12px;
   border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
   font-size: 13px;
 }
 
+.resultsTable th + th,
+.resultsTable td + td {
+  border-left: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
 .resultsTable th {
   color: var(--muted);
-  background: var(--panel-soft);
+  background: color-mix(in srgb, var(--panel-soft) 86%, var(--background));
+  border-bottom-color: var(--border-strong);
   font-weight: 800;
 }
 
+.resultsTable tbody tr:nth-child(odd) {
+  background: color-mix(in srgb, var(--panel) 46%, transparent);
+}
+
+.resultsTable tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--surface) 88%, var(--background));
+}
+
 .resultsTable tbody tr:hover {
-  background: var(--primary-soft);
+  background: color-mix(in srgb, var(--accent-soft) 62%, var(--surface));
 }
 
 .resultsTable tbody tr:last-child td {
   border-bottom: 0;
 }
 
+.resultsTable td:nth-child(4) {
+  color: var(--foreground);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .resultsTable a {
   color: var(--accent);
   font-weight: 800;
+}
+
+.statusPill,
+.keywordPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.statusPill.success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.statusPill.pending {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.keywordPill {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 @media (max-width: 1100px) {

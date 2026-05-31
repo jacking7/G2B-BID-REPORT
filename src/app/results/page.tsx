@@ -373,8 +373,18 @@ export default async function ResultsPage({
                 {results.map((result) => (
                   <tr key={result.id}>
                     <td>{formatDateTime(result.collectedAt)}</td>
-                    <td>{result.emailedAt ? "발송완료" : "미발송"}</td>
-                    <td>{result.matchedKeyword ?? "-"}</td>
+                    <td>
+                      <span className={result.emailedAt ? "statusPill success" : "statusPill pending"}>
+                        {result.emailedAt ? "발송완료" : "미발송"}
+                      </span>
+                    </td>
+                    <td>
+                      {result.matchedKeyword ? (
+                        <span className="keywordPill">{result.matchedKeyword}</span>
+                      ) : (
+                        <span className="muted">-</span>
+                      )}
+                    </td>
                     <td>
                       {result.bidNotice.detailUrl ? (
                         <a href={result.bidNotice.detailUrl} target="_blank" rel="noreferrer">
@@ -424,7 +434,15 @@ export default async function ResultsPage({
                     <td>{formatDateTime(history.sentAt)}</td>
                     <td>{history.recipient}</td>
                     <td>{history.subject}</td>
-                    <td>{history.status}</td>
+                    <td>
+                      <span
+                        className={
+                          history.status === "sent" ? "statusPill success" : "statusPill pending"
+                        }
+                      >
+                        {history.status}
+                      </span>
+                    </td>
                     <td>{history.errorMessage ?? "-"}</td>
                   </tr>
                 ))}
