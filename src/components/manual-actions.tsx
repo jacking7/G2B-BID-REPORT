@@ -23,6 +23,7 @@ type CollectionJobSnapshot = {
     endpoint?: string;
     scannedCount: number;
     importedCount: number;
+    refreshedCount: number;
     totalMatches: number;
     excludedCount: number;
   };
@@ -180,7 +181,8 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
         <div className="progressStats">
           <span>조회 {progress?.scannedCount ?? 0}건</span>
           <span>일치 {progress?.totalMatches ?? 0}건</span>
-          <span>신규 {progress?.importedCount ?? 0}건</span>
+          <span>새 저장 {progress?.importedCount ?? 0}건</span>
+          <span>다시 표시 {progress?.refreshedCount ?? 0}건</span>
           <span>제외 {progress?.excludedCount ?? 0}건</span>
         </div>
       </div>

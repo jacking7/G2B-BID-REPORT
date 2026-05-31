@@ -8,6 +8,7 @@ type CollectionJobStatus = "idle" | "running" | "completed" | "failed" | "cancel
 
 type CollectionJobResult = {
   importedCount: number;
+  refreshedCount: number;
   totalMatches: number;
   excludedCount: number;
   scannedCount: number;
@@ -45,11 +46,11 @@ function buildMessage(result: CollectionJobResult) {
     return "상단 톱니바퀴 설정에서 포함 키워드를 1개 이상 등록해주세요.";
   }
 
-  if (result.importedCount > 0) {
-    return `공식 나라장터 API 수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`;
+  if (result.importedCount > 0 || result.refreshedCount > 0) {
+    return `공식 나라장터 API 수집 완료. 새로 저장 ${result.importedCount}건, 오늘 다시 표시 ${result.refreshedCount}건입니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`;
   }
 
-  return `공식 나라장터 API 수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`;
+  return `공식 나라장터 API 수집 완료. 새로 저장되거나 오늘 다시 표시할 공고가 없습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`;
 }
 
 function snapshot(job?: CollectionJob): CollectionJobSnapshot {
@@ -66,6 +67,7 @@ function snapshot(job?: CollectionJob): CollectionJobSnapshot {
         total: 1,
         scannedCount: 0,
         importedCount: 0,
+        refreshedCount: 0,
         totalMatches: 0,
         excludedCount: 0,
       },
@@ -125,6 +127,7 @@ export function startCollectionJob(userId: string) {
       total: 1,
       scannedCount: 0,
       importedCount: 0,
+      refreshedCount: 0,
       totalMatches: 0,
       excludedCount: 0,
     },
@@ -146,6 +149,7 @@ export function startCollectionJob(userId: string) {
       job.status = "completed";
       job.result = {
         importedCount: result.importedCount,
+        refreshedCount: result.refreshedCount,
         totalMatches: result.totalMatches,
         excludedCount: result.excludedCount,
         scannedCount: result.scannedCount,

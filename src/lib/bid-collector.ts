@@ -24,6 +24,7 @@ export type CollectionProgress = {
   endpoint?: string;
   scannedCount: number;
   importedCount: number;
+  refreshedCount: number;
   totalMatches: number;
   excludedCount: number;
 };
@@ -343,6 +344,7 @@ async function loadBidNotices(keywords: string[], options?: CollectBidNoticesOpt
     total: totalApiCalls,
     scannedCount,
     importedCount: 0,
+    refreshedCount: 0,
     totalMatches: 0,
     excludedCount: 0,
   });
@@ -375,6 +377,7 @@ async function loadBidNotices(keywords: string[], options?: CollectBidNoticesOpt
         endpoint,
         scannedCount,
         importedCount: 0,
+        refreshedCount: 0,
         totalMatches: 0,
         excludedCount: 0,
       });
@@ -422,6 +425,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
     total: 1,
     scannedCount: 0,
     importedCount: 0,
+    refreshedCount: 0,
     totalMatches: 0,
     excludedCount: 0,
   });
@@ -434,12 +438,14 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
       keywords: [],
       source: "official-api" as const,
       scannedCount: 0,
+      refreshedCount: 0,
     };
   }
 
   const { notices, source, scannedCount } = await loadBidNotices(expandedIncludeKeywords, options);
 
   let importedCount = 0;
+  let refreshedCount = 0;
   let totalMatches = 0;
   let excludedCount = 0;
   let processedNotices = 0;
@@ -450,6 +456,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
     total: notices.length,
     scannedCount,
     importedCount,
+    refreshedCount,
     totalMatches,
     excludedCount,
   });
@@ -465,6 +472,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
         total: notices.length,
         scannedCount,
         importedCount,
+        refreshedCount,
         totalMatches,
         excludedCount,
       });
@@ -483,6 +491,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
         total: notices.length,
         scannedCount,
         importedCount,
+        refreshedCount,
         totalMatches,
         excludedCount,
       });
@@ -501,6 +510,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
         total: notices.length,
         scannedCount,
         importedCount,
+        refreshedCount,
         totalMatches,
         excludedCount,
       });
@@ -561,6 +571,18 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
         },
       });
       importedCount += 1;
+    } else {
+      await prisma.collectedResult.update({
+        where: {
+          id: existing.id,
+        },
+        data: {
+          matchedKeyword,
+          collectedAt: new Date(),
+          status: "collected",
+        },
+      });
+      refreshedCount += 1;
     }
 
     emitProgress(options, {
@@ -570,6 +592,7 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
       keyword: matchedKeyword,
       scannedCount,
       importedCount,
+      refreshedCount,
       totalMatches,
       excludedCount,
     });
@@ -581,12 +604,14 @@ export async function collectBidNotices(userId: string, options?: CollectBidNoti
     total: notices.length,
     scannedCount,
     importedCount,
+    refreshedCount,
     totalMatches,
     excludedCount,
   });
 
   return {
     importedCount,
+    refreshedCount,
     totalMatches,
     keywords: expandedIncludeKeywords,
     excludedCount,

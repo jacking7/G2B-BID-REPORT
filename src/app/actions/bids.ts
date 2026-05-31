@@ -46,9 +46,9 @@ export async function collectBidNoticesAction(
   return {
     success: true,
     message:
-      result.importedCount > 0
-        ? `공식 나라장터 API 수집 완료, ${result.importedCount}건의 신규 공고를 저장했습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`
-        : `공식 나라장터 API 수집은 완료됐고, 저장할 신규 공고는 없었습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`,
+      result.importedCount > 0 || result.refreshedCount > 0
+        ? `공식 나라장터 API 수집 완료. 새로 저장 ${result.importedCount}건, 오늘 다시 표시 ${result.refreshedCount}건입니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`
+        : `공식 나라장터 API 수집 완료. 새로 저장되거나 오늘 다시 표시할 공고가 없습니다. 일치 ${result.totalMatches}건, 제외 ${result.excludedCount}건입니다.`,
   };
 }
 

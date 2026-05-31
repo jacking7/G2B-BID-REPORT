@@ -206,7 +206,8 @@ Collection runs per user.
 5. Exclude keywords remove otherwise matched notices.
 6. `BidNotice` is upserted by notice number and order.
 7. `CollectedResult` is unique per user and notice.
-8. API failures do not create partial result rows.
+8. If an existing user result is matched again, its confirmation time and matched keyword are refreshed so it remains visible in today's default result list.
+9. API failures do not create partial result rows.
 
 KST date bounds:
 

@@ -47,16 +47,19 @@ export async function runCollectionJobs(options?: { userId?: string }) {
   const settings = await getActiveSchedules(options?.userId);
   let processed = 0;
   let imported = 0;
+  let refreshed = 0;
 
   for (const setting of settings) {
     const result = await collectBidNotices(setting.userId);
     processed += 1;
     imported += result.importedCount;
+    refreshed += result.refreshedCount;
   }
 
   return {
     processedUsers: processed,
     importedCount: imported,
+    refreshedCount: refreshed,
   };
 }
 

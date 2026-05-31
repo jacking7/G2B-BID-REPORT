@@ -35,7 +35,7 @@ type CollectedResultWithNotice = Awaited<ReturnType<typeof getCollectedResultsFo
 
 function buildWorkbookFromResults(results: CollectedResultWithNotice[]) {
   const rows = results.map((result) => ({
-    수집시각: formatDateTime(result.collectedAt),
+    확인시각: formatDateTime(result.collectedAt),
     발송상태: result.emailedAt ? "발송완료" : "미발송",
     매칭키워드: result.matchedKeyword ?? "-",
     공고번호: result.bidNotice.bidNtceNo,

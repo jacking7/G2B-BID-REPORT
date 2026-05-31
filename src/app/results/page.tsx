@@ -350,7 +350,7 @@ export default async function ResultsPage({
         <div className="panelHeader">
           <div>
             <h2>공고 목록</h2>
-            <p>최신 수집 순으로 표시합니다.</p>
+            <p>최신 확인 순으로 표시합니다. 이미 저장된 공고도 다시 조건에 맞으면 오늘 목록에 올라옵니다.</p>
           </div>
         </div>
 
@@ -359,7 +359,7 @@ export default async function ResultsPage({
             <table className="resultsTable">
               <thead>
                 <tr>
-                  <th>수집시각</th>
+                  <th>확인시각</th>
                   <th>발송상태</th>
                   <th>매칭 키워드</th>
                   <th>공고명</th>
@@ -404,7 +404,7 @@ export default async function ResultsPage({
             </table>
           </div>
         ) : (
-          <p className="muted">아직 수집된 공고가 없습니다. 먼저 키워드를 등록하고 수집을 실행해주세요.</p>
+          <p className="muted">현재 조건에 맞는 공고가 없습니다. 키워드와 날짜 필터를 확인하거나 수집을 실행해주세요.</p>
         )}
       </section>
 
