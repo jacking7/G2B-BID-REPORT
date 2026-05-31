@@ -346,6 +346,7 @@ Recent production events:
 
 | Date (KST) | Commit | Event | Verification |
 | --- | --- | --- | --- |
+| 2026-06-01 05:05 | `03c712c` | Restored functional section boundaries for metrics, manual actions, automation status, and nested operational groups. | Local lint/build passed, Playwright web screenshot confirmed section borders, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
 | 2026-06-01 04:59 | `64c7a35` | Restored visible boundaries for bid result tables while keeping non-data header chrome flat. | Local lint/build passed, Playwright web screenshot captured with 306 result rows, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
 | 2026-06-01 04:49 | `9ba5403` | Flattened the web UI by removing unnecessary card, box, and shadow treatment from operational screens. | Local lint/build passed, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
 
