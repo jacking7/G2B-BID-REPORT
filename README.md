@@ -342,6 +342,12 @@ Expected behavior:
 - OAuth start routes return `302` to each provider with the production callback URL
 - The PM2 process `g2b-bid-report` is `online`
 
+Recent production events:
+
+| Date (KST) | Commit | Event | Verification |
+| --- | --- | --- | --- |
+| 2026-06-01 04:49 | `9ba5403` | Flattened the web UI by removing unnecessary card, box, and shadow treatment from operational screens. | Local lint/build passed, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
+
 ## Troubleshooting
 
 ### No Collection Results
