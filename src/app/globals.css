@@ -633,6 +633,144 @@ a {
   line-height: 1.6;
 }
 
+.accessPanel {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary) 8%, transparent), transparent 34%),
+    var(--panel);
+}
+
+.accessTabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--field);
+}
+
+.accessTabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.accessTabs button.active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.accessMode {
+  display: grid;
+  gap: 16px;
+}
+
+.socialLoginGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.socialButton {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.socialButton span {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--field);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.socialButton.google:hover {
+  border-color: var(--accent);
+}
+
+.socialButton.naver {
+  border-color: color-mix(in srgb, var(--success) 48%, var(--border));
+}
+
+.socialButton.naver span {
+  background: var(--success);
+  color: #0f111a;
+}
+
+.socialButton.kakao {
+  border-color: color-mix(in srgb, var(--warning) 52%, var(--border));
+}
+
+.socialButton.kakao span {
+  background: var(--warning);
+  color: #0f111a;
+}
+
+.dividerLabel {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  color: var(--subtle);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dividerLabel::before,
+.dividerLabel::after {
+  content: "";
+  height: 1px;
+  background: var(--border);
+}
+
+.emailCodeForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.recoverGrid .authForm {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.recoverGrid h3 {
+  font-size: 15px;
+}
+
+.textButton {
+  justify-self: center;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .legalFooter {
   width: min(1500px, calc(100% - 48px));
   display: grid;
@@ -1592,6 +1730,10 @@ a {
   .manualActionButtons {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .emailCodeForm {
+    grid-template-columns: 1fr;
   }
 
   .topActions > *,

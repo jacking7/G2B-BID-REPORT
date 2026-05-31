@@ -18,6 +18,7 @@ model User {
   collectedResults CollectedResult[]
   mailHistories    MailHistory[]
   passwordResets   PasswordResetToken[]
+  socialAccounts   SocialAccount[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 }
@@ -112,4 +113,42 @@ model PasswordResetToken {
   createdAt DateTime  @default(now())
 
   @@index([userId, expiresAt])
+}
+
+model EmailVerificationCode {
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String
+  purpose   String    @default("register")
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, purpose, expiresAt])
+}
+
+model OAuthState {
+  id          String    @id @default(cuid())
+  stateHash   String    @unique
+  provider    String
+  redirectUri String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([provider, expiresAt])
+}
+
+model SocialAccount {
+  id             String   @id @default(cuid())
+  provider       String
+  providerUserId String
+  email          String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([provider, providerUserId])
+  @@index([userId, provider])
 }

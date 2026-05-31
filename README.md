@@ -148,6 +148,12 @@ Copy `.env.example` to `.env` and fill in local or production values.
 | `SMTP_USER` | SMTP username |
 | `SMTP_PASS` | SMTP password or app password |
 | `MAIL_FROM` | Email sender address, optionally with display name such as `G2B-Report <bot@example.com>` |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google OAuth web client ID for Google login |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Google OAuth web client secret |
+| `NAVER_OAUTH_CLIENT_ID` | Naver Developers client ID for Naver login |
+| `NAVER_OAUTH_CLIENT_SECRET` | Naver Developers client secret |
+| `KAKAO_REST_API_KEY` | Kakao Developers REST API key for Kakao login |
+| `KAKAO_CLIENT_SECRET` | Optional Kakao client secret, only when enabled in Kakao Developers |
 | `G2B_API_SERVICE_KEY` | Official G2B Open API service key |
 | `G2B_API_LOOKBACK_DAYS` | Number of registration days to search backwards |
 | `G2B_API_NUM_ROWS` | Rows per API page |
@@ -168,6 +174,17 @@ SMTP_USER="your-account@gmail.com"
 SMTP_PASS="your-16-character-app-password"
 MAIL_FROM="G2B-Report <your-account@gmail.com>"
 ```
+
+Social login redirect URLs:
+
+```text
+https://g2b-report.duckdns.org/api/auth/oauth/google/callback
+https://g2b-report.duckdns.org/api/auth/oauth/naver/callback
+https://g2b-report.duckdns.org/api/auth/oauth/kakao/callback
+```
+
+Social login requests and stores only the email address needed to identify the account.
+Do not enable profile/name/nickname permissions in provider consoles unless the product explicitly needs them later.
 
 ## Collection Rules
 

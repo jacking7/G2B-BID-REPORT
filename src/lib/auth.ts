@@ -86,7 +86,7 @@ export async function createUser(input: {
         email: input.email,
         passwordHash,
         name: input.name,
-        role: input.role ?? "admin",
+        role: input.role ?? "user",
       },
       select: {
         id: true,

@@ -30,6 +30,44 @@ export function getMailConfig() {
   };
 }
 
+function createMailTransporter(config: NonNullable<ReturnType<typeof getMailConfig>>) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.auth,
+  });
+}
+
+export async function sendEmailVerificationCode(input: {
+  email: string;
+  code: string;
+  expiresMinutes: number;
+}) {
+  const config = getMailConfig();
+  if (!config) {
+    return { sent: false };
+  }
+
+  const transporter = createMailTransporter(config);
+
+  await transporter.sendMail({
+    from: config.from,
+    to: input.email,
+    subject: "[G2B] 이메일 인증번호",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+        <h2>G2B Bid Report 이메일 인증</h2>
+        <p>아래 인증번호를 앱에 입력해주세요.</p>
+        <p style="font-size:28px;font-weight:800;letter-spacing:4px">${input.code}</p>
+        <p>이 번호는 ${input.expiresMinutes}분 동안만 사용할 수 있습니다.</p>
+      </div>
+    `,
+  });
+
+  return { sent: true };
+}
+
 export async function sendPasswordResetLink(input: {
   email: string;
   resetUrl: string;
@@ -40,12 +78,7 @@ export async function sendPasswordResetLink(input: {
     return { sent: false };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth,
-  });
+  const transporter = createMailTransporter(config);
 
   await transporter.sendMail({
     from: config.from,
@@ -57,6 +90,34 @@ export async function sendPasswordResetLink(input: {
         <p>아래 버튼을 눌러 새 비밀번호를 설정해주세요.</p>
         <p><a href="${input.resetUrl}" style="display:inline-block;padding:10px 14px;background:#bd93f9;color:#0f111a;text-decoration:none;border-radius:6px;font-weight:700">비밀번호 재설정</a></p>
         <p>이 링크는 ${input.expiresMinutes}분 동안만 사용할 수 있습니다.</p>
+      </div>
+    `,
+  });
+
+  return { sent: true };
+}
+
+export async function sendAccountLookupEmail(input: {
+  email: string;
+  accountEmail: string;
+}) {
+  const config = getMailConfig();
+  if (!config) {
+    return { sent: false };
+  }
+
+  const transporter = createMailTransporter(config);
+
+  await transporter.sendMail({
+    from: config.from,
+    to: input.email,
+    subject: "[G2B] 계정 안내",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+        <h2>G2B Bid Report 계정 안내</h2>
+        <p>요청하신 계정 이메일은 다음과 같습니다.</p>
+        <p style="font-size:18px;font-weight:800">${input.accountEmail}</p>
+        <p>본인이 요청하지 않았다면 이 메일을 무시해주세요.</p>
       </div>
     `,
   });
@@ -113,12 +174,7 @@ export async function sendPendingReport(userId: string) {
     };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.auth,
-  });
+  const transporter = createMailTransporter(config);
 
   const workbook = buildResultsWorkbookFromResults(results);
   const subject = `[G2B] ${getTodayDateLabel()} 신규 공고 ${results.length}건`;

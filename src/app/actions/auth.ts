@@ -1,9 +1,17 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import {
+  consumeEmailVerificationCode,
+  createEmailVerificationCode,
+  createSecretToken,
+  emailVerificationExpiresMinutes,
+  getRequestBaseUrl,
+  hashToken,
+  normalizeEmail,
+  passwordResetExpiresMinutes,
+} from "@/lib/auth-flows";
 import {
   createSession,
   createUser,
@@ -12,7 +20,11 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/auth";
-import { sendPasswordResetLink } from "@/lib/mail";
+import {
+  sendAccountLookupEmail,
+  sendEmailVerificationCode,
+  sendPasswordResetLink,
+} from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
 
 export type AuthActionState = {
@@ -21,6 +33,8 @@ export type AuthActionState = {
     password?: string[];
     name?: string[];
     token?: string[];
+    emailVerificationCode?: string[];
+    lookupEmail?: string[];
   };
   message?: string;
   success?: boolean;
@@ -38,40 +52,28 @@ const registerSchema = loginSchema.extend({
     .trim()
     .min(2, "이름은 2자 이상이어야 합니다.")
     .max(30, "이름은 30자 이하여야 합니다."),
+  emailVerificationCode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "6자리 인증번호를 입력해주세요."),
 });
 
 const passwordResetRequestSchema = z.object({
   email: z.email("올바른 이메일 주소를 입력해주세요."),
 });
 
+const emailVerificationRequestSchema = z.object({
+  email: z.email("올바른 이메일 주소를 입력해주세요."),
+});
+
+const accountLookupSchema = z.object({
+  lookupEmail: z.email("올바른 이메일 주소를 입력해주세요."),
+});
+
 const passwordResetSchema = z.object({
   token: z.string().min(1, "재설정 토큰이 없습니다."),
   password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
 });
-
-const passwordResetExpiresMinutes = 30;
-
-function hashResetToken(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
-
-async function getRequestBaseUrl() {
-  const headerStore = await headers();
-  const forwardedHost = headerStore.get("x-forwarded-host");
-  const host = forwardedHost ?? headerStore.get("host");
-  const forwardedProto = headerStore.get("x-forwarded-proto");
-
-  if (process.env.APP_BASE_URL) {
-    return process.env.APP_BASE_URL.replace(/\/$/, "");
-  }
-
-  if (!host) {
-    return "http://localhost:3000";
-  }
-
-  const protocol = forwardedProto ?? (host.includes("localhost") ? "http" : "https");
-  return `${protocol}://${host}`;
-}
 
 export async function loginAction(
   _state: AuthActionState,
@@ -124,6 +126,7 @@ export async function registerAction(
     email: formData.get("email"),
     password: formData.get("password"),
     name: formData.get("name"),
+    emailVerificationCode: formData.get("emailVerificationCode"),
   });
 
   if (!validated.success) {
@@ -133,15 +136,39 @@ export async function registerAction(
     };
   }
 
-  const userCount = await prisma.user.count();
-  if (userCount > 0) {
-    return {
-      message: "추가 운영자 계정은 시스템 관리자에게 요청해주세요.",
-    };
-  }
-
   try {
-    const user = await createUser(validated.data);
+    const normalizedEmail = normalizeEmail(validated.data.email);
+    const existingUser = await findUserByEmail(normalizedEmail);
+    if (existingUser) {
+      return {
+        errors: {
+          email: ["이미 사용 중인 이메일입니다."],
+        },
+        message: "이미 가입된 이메일입니다.",
+      };
+    }
+
+    const emailVerified = await consumeEmailVerificationCode({
+      email: normalizedEmail,
+      code: validated.data.emailVerificationCode,
+    });
+
+    if (!emailVerified) {
+      return {
+        errors: {
+          emailVerificationCode: ["인증번호가 올바르지 않거나 만료됐습니다."],
+        },
+        message: "이메일 인증을 완료해주세요.",
+      };
+    }
+
+    const userCount = await prisma.user.count();
+    const user = await createUser({
+      email: normalizedEmail,
+      name: validated.data.name,
+      password: validated.data.password,
+      role: userCount === 0 ? "admin" : "user",
+    });
 
     await createSession({
       id: user.id,
@@ -159,6 +186,40 @@ export async function registerAction(
   }
 
   redirect("/settings");
+}
+
+export async function requestEmailVerificationAction(
+  _state: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const validated = emailVerificationRequestSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!validated.success) {
+    return {
+      errors: validated.error.flatten().fieldErrors,
+      message: "이메일을 다시 확인해주세요.",
+    };
+  }
+
+  const { email, code } = await createEmailVerificationCode({
+    email: validated.data.email,
+  });
+  const result = await sendEmailVerificationCode({
+    email,
+    code,
+    expiresMinutes: emailVerificationExpiresMinutes,
+  }).catch(() => ({ sent: false }));
+
+  return {
+    success: result.sent,
+    message: result.sent
+      ? "인증번호를 이메일로 보냈습니다."
+      : process.env.NODE_ENV === "production"
+        ? "SMTP 설정을 확인해주세요. 인증번호를 발송하지 못했습니다."
+        : `개발 환경 인증번호: ${code}`,
+  };
 }
 
 export async function requestPasswordResetAction(
@@ -189,8 +250,8 @@ export async function requestPasswordResetAction(
   let devResetUrl: string | undefined;
 
   if (user) {
-    const token = randomBytes(32).toString("base64url");
-    const tokenHash = hashResetToken(token);
+    const token = createSecretToken();
+    const tokenHash = hashToken(token);
     const baseUrl = await getRequestBaseUrl();
     const resetUrl = `${baseUrl}/reset-password?token=${token}`;
     devResetUrl = resetUrl;
@@ -220,6 +281,39 @@ export async function requestPasswordResetAction(
   };
 }
 
+export async function requestAccountLookupAction(
+  _state: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const validated = accountLookupSchema.safeParse({
+    lookupEmail: formData.get("lookupEmail"),
+  });
+
+  if (!validated.success) {
+    return {
+      errors: {
+        lookupEmail: validated.error.flatten().fieldErrors.lookupEmail,
+      },
+      message: "이메일을 다시 확인해주세요.",
+    };
+  }
+
+  const email = normalizeEmail(validated.data.lookupEmail);
+  const user = await findUserByEmail(email);
+
+  if (user) {
+    await sendAccountLookupEmail({
+      email,
+      accountEmail: user.email,
+    }).catch(() => ({ sent: false }));
+  }
+
+  return {
+    success: true,
+    message: "가입된 계정이면 이메일로 계정 안내를 보냈습니다.",
+  };
+}
+
 export async function resetPasswordAction(
   _state: AuthActionState,
   formData: FormData,
@@ -237,7 +331,7 @@ export async function resetPasswordAction(
   }
 
   const { token, password } = validated.data;
-  const tokenHash = hashResetToken(token);
+  const tokenHash = hashToken(token);
   const resetToken = await prisma.passwordResetToken.findUnique({
     where: {
       tokenHash,
