@@ -125,6 +125,10 @@ Use `.env.example` as the public template and keep real values only in the runti
 
 The native mobile app lives in the separate `G2B-BID-REPORT-MOBILE` repository,
 but these `/api/mobile/*` routes are owned and deployed by this server app.
+The mobile dashboard follows the same result visibility policy as the web console:
+repeat-matched existing notices refresh their confirmation time, appear in the
+`todayConfirmed` metric, and expose `confirmedAt` while keeping `collectedAt`
+for compatibility.
 
 ## Quick Start
 

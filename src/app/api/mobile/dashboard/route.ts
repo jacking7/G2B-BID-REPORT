@@ -122,20 +122,24 @@ export async function GET(request: Request) {
     user: auth.user,
     metrics: [
       {
+        key: "pendingMail",
         label: "미발송",
         value: pendingMailCount,
         helper: "메일 발송 대기",
       },
       {
-        label: "오늘 수집",
+        key: "todayConfirmed",
+        label: "오늘 확인",
         value: todayCollectionCount,
-        helper: "KST 기준",
+        helper: "새 저장+다시 표시",
       },
       {
+        key: "activeRecipients",
         label: "활성 수신자",
         value: recipients.length,
       },
       {
+        key: "keywordRules",
         label: "포함/제외",
         value: `${includeKeywords.length}/${excludeKeywords.length}`,
         helper: "키워드",
@@ -148,10 +152,17 @@ export async function GET(request: Request) {
       organization: result.bidNotice.organization,
       matchedKeyword: result.matchedKeyword,
       collectedAt: result.collectedAt.toISOString(),
+      confirmedAt: result.collectedAt.toISOString(),
       emailedAt: result.emailedAt?.toISOString() ?? null,
       closeDate: result.bidNotice.closeDate?.toISOString() ?? null,
       detailUrl: result.bidNotice.detailUrl,
     })),
+    collectionPolicy: {
+      resultTimeLabel: "확인시각",
+      todayMetricKey: "todayConfirmed",
+      repeatMatchedResultsRefresh: true,
+      repeatMatchedResultsResendMail: false,
+    },
     settings: {
       includeKeywords,
       excludeKeywords,
