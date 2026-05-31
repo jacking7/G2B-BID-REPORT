@@ -419,7 +419,7 @@ a {
 .consoleGrid,
 .grid {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .consoleGrid.two,
@@ -431,27 +431,25 @@ a {
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .consolePanel,
 .card,
 .hero {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
   box-shadow: none;
 }
 
 .consolePanel,
 .card {
-  padding: 0 0 18px;
-  border-bottom: 1px solid var(--border);
+  padding: 18px;
 }
 
 .hero {
-  padding: 0 0 20px;
-  border-bottom: 1px solid var(--border);
+  padding: 20px;
 }
 
 .panelHeader,
@@ -461,6 +459,8 @@ a {
   gap: 14px;
   align-items: flex-start;
   margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .panelHeader h2,
@@ -475,9 +475,11 @@ a {
   display: grid;
   align-content: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
   border-left: 3px solid var(--border-strong);
-  background: transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
 }
 
 .metricTile span,
@@ -1254,16 +1256,16 @@ a {
 .collectionProgressPanel,
 .settingsSnapshot,
 .automationStatusBoard {
-  border: 0;
-  border-radius: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: transparent;
 }
 
 .collectionProgressPanel {
   display: grid;
   gap: 10px;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--border);
+  padding: 14px;
+  background: color-mix(in srgb, var(--field) 62%, transparent);
 }
 
 .progressHeader {
@@ -1329,14 +1331,21 @@ a {
 
 .settingsSnapshot {
   display: grid;
-  gap: 12px;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--border);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--field) 46%, transparent);
 }
 
 .snapshotGroup {
   display: grid;
   gap: 8px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.snapshotGroup:last-child {
+  border-bottom: 0;
 }
 
 .snapshotGroup strong {
@@ -1373,8 +1382,9 @@ a {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
   gap: 14px;
-  padding: 0;
+  padding: 14px;
   align-items: center;
+  background: color-mix(in srgb, var(--field) 46%, transparent);
 }
 
 .statusDial {
@@ -1431,10 +1441,9 @@ a {
   align-content: center;
   gap: 5px;
   padding: 10px;
-  border: 0;
-  border-left: 1px solid var(--border);
-  border-radius: 0;
-  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
 }
 
 .automationTimeline span {
