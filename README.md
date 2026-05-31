@@ -351,6 +351,7 @@ Recent production events:
 
 | Date (KST) | Commit | Event | Verification |
 | --- | --- | --- | --- |
+| 2026-06-01 05:27 | `945ce86` | Aligned the mobile dashboard API with web repeat-collection visibility by exposing `todayConfirmed`, `confirmedAt`, and collection policy metadata while preserving `collectedAt`. | Local lint/typecheck/build passed, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200, unauthenticated mobile dashboard returned 401, authenticated dashboard smoke returned `todayConfirmed=322` and `confirmedAt`. |
 | 2026-06-01 05:17 | `55f7a4f` | Refreshed already-saved matching notices during repeat collection so open notices remain visible in today's default result list without duplicate rows or duplicate mail. | Local lint/typecheck/build passed, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
 | 2026-06-01 05:05 | `03c712c` | Restored functional section boundaries for metrics, manual actions, automation status, and nested operational groups. | Local lint/build passed, Playwright web screenshot confirmed section borders, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
 | 2026-06-01 04:59 | `64c7a35` | Restored visible boundaries for bid result tables while keeping non-data header chrome flat. | Local lint/build passed, Playwright web screenshot captured with 306 result rows, production build passed, PM2 online, `/api/health` OK, `/login` HTTP 200. |
