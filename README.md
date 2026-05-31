@@ -48,10 +48,19 @@ Current production smoke target:
 curl https://g2b-report.duckdns.org/api/health
 ```
 
+Last verified production deployment:
+
+- Event date: `2026-06-01 KST`
+- Git commit: `7e627c099a16df740c270ce95f0af442f52de0ad`
+- Runtime: AWS EC2 + PM2 process `g2b-bid-report`
+- OAuth start routes: Google, Naver, and Kakao return `302` redirects from production
+- Runtime base URL: `https://g2b-report.duckdns.org`
+
 ## Features
 
 - Next.js App Router web console
 - Email/password authentication
+- Email verification and Google, Naver, Kakao social login
 - User-specific include and exclude keyword rules
 - User-specific recipients and collection/send schedules
 - User-level automation on/off plus a server-wide scheduler switch
@@ -321,12 +330,16 @@ Public post-deploy smoke check:
 ```bash
 curl https://g2b-report.duckdns.org/api/health
 curl -I https://g2b-report.duckdns.org/
+curl -I https://g2b-report.duckdns.org/api/auth/oauth/google/start
+curl -I https://g2b-report.duckdns.org/api/auth/oauth/naver/start
+curl -I https://g2b-report.duckdns.org/api/auth/oauth/kakao/start
 ```
 
 Expected behavior:
 
 - `/api/health` returns `{"ok":true,"database":"connected",...}`
 - `/` redirects to `/login`
+- OAuth start routes return `302` to each provider with the production callback URL
 - The PM2 process `g2b-bid-report` is `online`
 
 ## Troubleshooting
