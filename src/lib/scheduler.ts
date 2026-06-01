@@ -69,7 +69,10 @@ export async function runSendJobs(options?: { userId?: string }) {
   let sentRecipients = 0;
 
   for (const setting of settings) {
-    const result = await sendPendingReport(setting.userId);
+    const result = await sendPendingReport(setting.userId, {
+      timezone: setting.timezone,
+      sendTime: setting.sendTime,
+    });
     processed += 1;
     sentRecipients += result.sentCount;
   }
@@ -100,7 +103,10 @@ async function runScheduledJobs() {
       const key = `${setting.userId}:send:${date}:${time}`;
       if (!minuteKeys.has(key)) {
         minuteKeys.add(key);
-        await sendPendingReport(setting.userId);
+        await sendPendingReport(setting.userId, {
+          timezone: setting.timezone,
+          sendTime: setting.sendTime,
+        });
       }
     }
   }

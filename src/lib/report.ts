@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { formatCurrency, formatDateTime, getTodayDateLabel } from "@/lib/format";
+import type { getDailyReportWindow } from "@/lib/report-window";
 
 export async function getCollectedResultsForUser(userId: string) {
   return prisma.collectedResult.findMany({
@@ -21,6 +22,26 @@ export async function getPendingResultsForUser(userId: string) {
     where: {
       userId,
       emailedAt: null,
+    },
+    orderBy: {
+      collectedAt: "desc",
+    },
+    include: {
+      bidNotice: true,
+    },
+  });
+}
+
+type DailyReportWindow = ReturnType<typeof getDailyReportWindow>;
+
+export async function getDailyReportResultsForUser(userId: string, window: DailyReportWindow) {
+  return prisma.collectedResult.findMany({
+    where: {
+      userId,
+      collectedAt: {
+        gte: window.start,
+        lt: window.end,
+      },
     },
     orderBy: {
       collectedAt: "desc",
@@ -73,7 +94,9 @@ export async function buildResultsWorkbook(userId: string) {
 
 export function buildReportHtml(input: {
   userName: string;
-  results: Awaited<ReturnType<typeof getPendingResultsForUser>>;
+  results: CollectedResultWithNotice[];
+  title?: string;
+  summary?: string;
 }) {
   const { userName, results } = input;
   const rows = results
@@ -93,8 +116,8 @@ export function buildReportHtml(input: {
 
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;">
-      <h2>나라장터 신규 공고 리포트</h2>
-      <p>${userName}님 기준 신규 수집 공고 ${results.length}건입니다.</p>
+      <h2>${input.title ?? "나라장터 공고 리포트"}</h2>
+      <p>${input.summary ?? `${userName}님 기준 확인 공고 ${results.length}건입니다.`}</p>
       <table style="border-collapse:collapse;width:100%;margin-top:16px;">
         <thead>
           <tr>

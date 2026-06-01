@@ -10,7 +10,7 @@ type SendReportButtonProps = {
 
 const initialState: MailActionState = {};
 
-export function SendReportButton({ action, label = "신규 결과 메일 발송" }: SendReportButtonProps) {
+export function SendReportButton({ action, label = "일일 리포트 메일 발송" }: SendReportButtonProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (

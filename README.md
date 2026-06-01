@@ -67,7 +67,7 @@ Last verified production deployment:
 - Official G2B bid notice Open API collection
 - Result filtering by date, mail status, keyword, and free-text query
 - Excel export for collected results
-- SMTP email report sending with send history
+- SMTP daily email report sending with send history
 - Password reset, password change, and account withdrawal
 - SQLite + Prisma data layer
 - Light and Dracula-style dark themes with icon-only toggle controls
@@ -121,7 +121,7 @@ Use `.env.example` as the public template and keep real values only in the runti
 | `/api/mobile/auth/login` | Mobile app email/password login endpoint |
 | `/api/mobile/dashboard` | Mobile app dashboard summary endpoint |
 | `/api/mobile/collection/start` | Mobile app manual collection start endpoint |
-| `/api/mobile/reports/send` | Mobile app pending report send endpoint |
+| `/api/mobile/reports/send` | Mobile app daily report send endpoint |
 
 The native mobile app lives in the separate `G2B-BID-REPORT-MOBILE` repository,
 but these `/api/mobile/*` routes are owned and deployed by this server app.
@@ -228,6 +228,10 @@ Automation has two layers:
 - `ScheduleSetting.active`: per-user on/off switch managed in the UI
 
 The effective status is active only when both are on. External job endpoints also process active schedules only.
+Send jobs use each user's saved `ScheduleSetting.sendTime` and `timezone` to build
+the daily report window from the previous send time to the current send time.
+The report includes every notice confirmed in that window, including existing
+notices that matched again and were refreshed into the current result list.
 
 ## Scripts
 
@@ -380,6 +384,8 @@ Recent production events:
 - For Gmail, confirm a Google app password is used and `SMTP_PASS` contains the compact 16-character password.
 - Confirm `MAIL_FROM` is either a plain address or a valid display-name format such as `G2B-Report <account@gmail.com>`.
 - Empty SMTP settings intentionally create skipped mail history instead of sending.
+- Daily reports are skipped when there are no notices confirmed between the previous configured send time and the current configured send time.
+- A successfully sent daily report is not sent again for the same report date.
 
 ## License
 

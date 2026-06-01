@@ -160,7 +160,7 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
 
         <form action={mailFormAction}>
           <button type="submit" className="secondaryButton" disabled={mailPending}>
-            {mailPending ? "발송 중..." : "신규 결과 메일 발송"}
+            {mailPending ? "발송 중..." : "일일 리포트 메일 발송"}
           </button>
         </form>
       </div>

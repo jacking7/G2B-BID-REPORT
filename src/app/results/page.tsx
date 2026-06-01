@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
+import { getDailyReportWindow } from "@/lib/report-window";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,6 @@ export default async function ResultsPage({
     results,
     keywordRules,
     recipients,
-    pendingMailCount,
     mailHistories,
     schedule,
     retryableMailCount,
@@ -127,12 +127,6 @@ export default async function ResultsPage({
       },
       orderBy: {
         createdAt: "asc",
-      },
-    }),
-    prisma.collectedResult.count({
-      where: {
-        userId: user.id,
-        emailedAt: null,
       },
     }),
     prisma.mailHistory.findMany({
@@ -175,6 +169,19 @@ export default async function ResultsPage({
     : userScheduleEnabled
       ? "자동 실행"
       : "사용자 OFF";
+  const dailyReportWindow = getDailyReportWindow({
+    timezone: schedule?.timezone,
+    sendTime: schedule?.sendTime,
+  });
+  const dailyReportTargetCount = await prisma.collectedResult.count({
+    where: {
+      userId: user.id,
+      collectedAt: {
+        gte: dailyReportWindow.start,
+        lt: dailyReportWindow.end,
+      },
+    },
+  });
   const resultsReturnPath = getResultsReturnPath(params);
 
   return (
@@ -197,8 +204,8 @@ export default async function ResultsPage({
           <strong>{results.length}</strong>
         </article>
         <article className="metricTile">
-          <span>미발송</span>
-          <strong>{pendingMailCount}</strong>
+          <span>일일 리포트 대상</span>
+          <strong>{dailyReportTargetCount}</strong>
         </article>
         <article className="metricTile">
           <span>활성 수신자</span>
@@ -217,7 +224,7 @@ export default async function ResultsPage({
           <div className="panelHeader">
             <div>
               <h2>수동 작업</h2>
-              <p>수집 실행 후 미발송 결과를 Excel 첨부 메일로 보냅니다.</p>
+              <p>수집 실행 후 설정된 발송 시간 기준 일일 리포트를 Excel 첨부 메일로 보냅니다.</p>
             </div>
           </div>
           <ManualActions sendAction={sendBidReportAction} />
@@ -255,10 +262,10 @@ export default async function ResultsPage({
               </div>
             </div>
           </div>
-          {pendingMailCount > 0 && retryableMailCount > 0 ? (
+          {retryableMailCount > 0 ? (
             <p className="muted compactMuted">
-              이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 미발송 {pendingMailCount}건은 위
-              발송 버튼으로 다시 보낼 수 있습니다.
+              이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 현재 일일 리포트 대상은{" "}
+              {dailyReportTargetCount}건입니다.
             </p>
           ) : null}
         </article>

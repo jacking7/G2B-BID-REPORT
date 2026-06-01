@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 import {
   buildReportHtml,
   buildResultsWorkbookFromResults,
-  getPendingResultsForUser,
+  getDailyReportResultsForUser,
 } from "@/lib/report";
-import { getTodayDateLabel } from "@/lib/format";
+import { getDailyReportWindow } from "@/lib/report-window";
 
 export function getMailConfig() {
   const host = process.env.SMTP_HOST;
@@ -125,8 +125,50 @@ export async function sendAccountLookupEmail(input: {
   return { sent: true };
 }
 
-export async function sendPendingReport(userId: string) {
-  const [user, recipients, results] = await Promise.all([
+async function getUserReportSchedule(
+  userId: string,
+  options?: { timezone?: string; sendTime?: string },
+) {
+  if (options?.timezone && options.sendTime) {
+    return {
+      timezone: options.timezone,
+      sendTime: options.sendTime,
+    };
+  }
+
+  const schedule = await prisma.scheduleSetting.findFirst({
+    where: {
+      userId,
+      active: true,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+    select: {
+      timezone: true,
+      sendTime: true,
+    },
+  });
+
+  return {
+    timezone: options?.timezone ?? schedule?.timezone ?? "Asia/Seoul",
+    sendTime: options?.sendTime ?? schedule?.sendTime ?? "09:00",
+  };
+}
+
+export async function sendPendingReport(
+  userId: string,
+  options?: { timezone?: string; sendTime?: string; now?: Date },
+) {
+  const schedule = await getUserReportSchedule(userId, options);
+  const reportWindow = getDailyReportWindow({
+    timezone: schedule.timezone,
+    sendTime: schedule.sendTime,
+    now: options?.now,
+  });
+  const subjectPrefix = `[G2B] ${reportWindow.label} 일일 공고 `;
+
+  const [user, recipients, results, alreadySent] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, name: true },
@@ -140,7 +182,22 @@ export async function sendPendingReport(userId: string) {
         createdAt: "asc",
       },
     }),
-    getPendingResultsForUser(userId),
+    getDailyReportResultsForUser(userId, reportWindow),
+    prisma.mailHistory.findFirst({
+      where: {
+        userId,
+        status: "sent",
+        subject: {
+          startsWith: subjectPrefix,
+        },
+        sentAt: {
+          gte: reportWindow.end,
+        },
+      },
+      select: {
+        id: true,
+      },
+    }),
   ]);
 
   if (!user) {
@@ -151,9 +208,23 @@ export async function sendPendingReport(userId: string) {
     return { success: false, message: "활성 수신자가 없습니다.", sentCount: 0 };
   }
 
-  if (results.length === 0) {
-    return { success: false, message: "발송할 신규 공고가 없습니다.", sentCount: 0 };
+  if (alreadySent) {
+    return {
+      success: true,
+      message: `${reportWindow.label} 일일 리포트는 이미 발송됐습니다.`,
+      sentCount: 0,
+    };
   }
+
+  if (results.length === 0) {
+    return {
+      success: false,
+      message: `${reportWindow.label} 일일 리포트로 발송할 확인 공고가 없습니다.`,
+      sentCount: 0,
+    };
+  }
+
+  const subject = `${subjectPrefix}${results.length}건`;
 
   const config = getMailConfig();
   if (!config) {
@@ -161,7 +232,7 @@ export async function sendPendingReport(userId: string) {
       data: recipients.map((recipient) => ({
         userId,
         recipient: recipient.email,
-        subject: `[G2B] ${getTodayDateLabel()} 신규 공고 ${results.length}건`,
+        subject,
         status: "skipped",
         errorMessage: "SMTP 설정이 없어 실제 발송을 건너뛰었습니다.",
       })),
@@ -177,10 +248,11 @@ export async function sendPendingReport(userId: string) {
   const transporter = createMailTransporter(config);
 
   const workbook = buildResultsWorkbookFromResults(results);
-  const subject = `[G2B] ${getTodayDateLabel()} 신규 공고 ${results.length}건`;
   const html = buildReportHtml({
     userName: user.name ?? user.email,
     results,
+    title: "나라장터 일일 공고 리포트",
+    summary: `${user.name ?? user.email}님 기준 ${reportWindow.label} ${schedule.sendTime} 발송 대상 공고 ${results.length}건입니다.`,
   });
 
   let sentCount = 0;
