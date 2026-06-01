@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const dashboardResultLimit = 10;
-
 function getKoreanDateInputValue(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -104,7 +102,6 @@ export async function GET(request: Request) {
       orderBy: {
         collectedAt: "desc",
       },
-      take: dashboardResultLimit,
       include: {
         bidNotice: true,
       },

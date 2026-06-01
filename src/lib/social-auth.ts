@@ -1,5 +1,5 @@
 import { createSecretToken, getRequestBaseUrl, hashToken, type SocialProvider } from "@/lib/auth-flows";
-import { createSession, hashPassword } from "@/lib/auth";
+import { createSession, createSessionToken, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 type SocialProfile = {
@@ -100,6 +100,56 @@ export async function createSocialAuthorizationUrl(provider: SocialProvider) {
   });
 
   return `${config.authorizationEndpoint}?${params.toString()}`;
+}
+
+export async function createMobileSocialAuthorizationUrl(
+  provider: SocialProvider,
+  nativeRedirectUri: string,
+) {
+  const config = getProviderConfig(provider);
+  if (!config) {
+    return null;
+  }
+
+  const baseUrl = await getRequestBaseUrl();
+  const redirectUri = `${baseUrl}/api/mobile/auth/social/${provider}/callback`;
+  const state = `${createSecretToken()}.${Buffer.from(nativeRedirectUri).toString("base64url")}`;
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: config.clientId,
+    redirect_uri: redirectUri,
+    state,
+  });
+
+  if (config.scopes.length > 0) {
+    params.set("scope", config.scopes.join(provider === "kakao" ? "," : " "));
+  }
+
+  await prisma.oAuthState.create({
+    data: {
+      stateHash: hashToken(state),
+      provider,
+      redirectUri,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  });
+
+  return `${config.authorizationEndpoint}?${params.toString()}`;
+}
+
+export function getNativeRedirectUriFromState(state: string) {
+  const encodedRedirectUri = state.split(".")[1];
+  if (!encodedRedirectUri) {
+    return null;
+  }
+
+  try {
+    const redirectUri = Buffer.from(encodedRedirectUri, "base64url").toString("utf8");
+    const parsed = new URL(redirectUri);
+    return parsed.protocol === "bidkok:" ? redirectUri : null;
+  } catch {
+    return null;
+  }
 }
 
 async function exchangeAuthorizationCode(input: {
@@ -335,6 +385,16 @@ export async function completeSocialLogin(input: {
   });
 
   await createSession(user);
+  return user;
+}
+
+export async function completeMobileSocialLogin(input: {
+  provider: SocialProvider;
+  code: string;
+  state: string;
+}) {
+  const user = await completeSocialLogin(input);
+  return createSessionToken(user);
 }
 
 export function isSocialAuthConfigured(provider: SocialProvider) {
