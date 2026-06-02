@@ -174,7 +174,7 @@ Copy `.env.example` to `.env` and fill in local or production values.
 | `G2B_API_CONCURRENCY` | Concurrent API request limit |
 | `ENABLE_INTERNAL_SCHEDULER` | Server-wide in-app scheduler switch |
 | `INTERNAL_JOB_TOKEN` | Bearer token for external job endpoints |
-| `APP_BASE_URL` | Base URL used by job scripts and password reset links |
+| `APP_BASE_URL` | Public base URL used by OAuth callbacks, job scripts, and password reset links |
 
 If SMTP variables are empty, email sending is skipped and recorded as a skipped mail history entry.
 
@@ -195,6 +195,10 @@ https://g2b-report.duckdns.org/api/auth/oauth/google/callback
 https://g2b-report.duckdns.org/api/auth/oauth/naver/callback
 https://g2b-report.duckdns.org/api/auth/oauth/kakao/callback
 ```
+
+Production OAuth callbacks are pinned to the public site URL. If a production
+runtime accidentally receives a localhost base URL, the auth flow falls back to
+`https://g2b-report.duckdns.org` instead of generating localhost redirects.
 
 Social login requests and stores only the email address needed to identify the account.
 Do not enable profile/name/nickname permissions in provider consoles unless the product explicitly needs them later.

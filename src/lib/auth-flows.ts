@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 export const emailVerificationExpiresMinutes = 10;
 export const oauthStateExpiresMinutes = 10;
 export const passwordResetExpiresMinutes = 30;
+const productionBaseUrl = "https://g2b-report.duckdns.org";
+const localHostnames = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
 
 export type SocialProvider = "google" | "naver" | "kakao";
 
@@ -22,6 +24,43 @@ export function createNumericCode() {
 
 export function createSecretToken() {
   return randomBytes(32).toString("base64url");
+}
+
+function firstHeaderValue(value: string | null) {
+  return value?.split(",")[0]?.trim() || null;
+}
+
+function isLocalHostname(hostname: string) {
+  return localHostnames.has(hostname.toLowerCase());
+}
+
+function getHostnameFromHostHeader(host: string) {
+  const trimmed = host.trim().toLowerCase();
+  if (trimmed.startsWith("[")) {
+    return trimmed.slice(1, trimmed.indexOf("]"));
+  }
+
+  return trimmed.split(":")[0] ?? trimmed;
+}
+
+function normalizeBaseUrl(value: string | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value.trim()).origin;
+  } catch {
+    return null;
+  }
+}
+
+function isLocalBaseUrl(value: string) {
+  try {
+    return isLocalHostname(new URL(value).hostname);
+  } catch {
+    return false;
+  }
 }
 
 export function hashEmailVerificationCode(input: {
@@ -97,20 +136,29 @@ export async function consumeEmailVerificationCode(input: {
 
 export async function getRequestBaseUrl() {
   const headerStore = await headers();
-  const forwardedHost = headerStore.get("x-forwarded-host");
-  const host = forwardedHost ?? headerStore.get("host");
-  const forwardedProto = headerStore.get("x-forwarded-proto");
+  const forwardedHost = firstHeaderValue(headerStore.get("x-forwarded-host"));
+  const host = forwardedHost ?? firstHeaderValue(headerStore.get("host"));
+  const forwardedProto = firstHeaderValue(headerStore.get("x-forwarded-proto"));
+  const appBaseUrl = normalizeBaseUrl(process.env.APP_BASE_URL);
 
-  if (process.env.APP_BASE_URL) {
-    return process.env.APP_BASE_URL.replace(/\/$/, "");
+  if (appBaseUrl) {
+    if (process.env.NODE_ENV !== "production" || !isLocalBaseUrl(appBaseUrl)) {
+      return appBaseUrl;
+    }
   }
 
   if (!host) {
-    return "http://localhost:3000";
+    return process.env.NODE_ENV === "production" ? productionBaseUrl : "http://localhost:3000";
   }
 
-  const protocol = forwardedProto ?? (host.includes("localhost") ? "http" : "https");
-  return `${protocol}://${host}`;
+  const protocol = forwardedProto ?? (isLocalHostname(getHostnameFromHostHeader(host)) ? "http" : "https");
+  const requestBaseUrl = `${protocol}://${host}`;
+
+  if (process.env.NODE_ENV === "production" && isLocalBaseUrl(requestBaseUrl)) {
+    return productionBaseUrl;
+  }
+
+  return requestBaseUrl;
 }
 
 export function getSocialProviderLabel(provider: SocialProvider) {
