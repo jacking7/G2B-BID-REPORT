@@ -45,6 +45,38 @@ function getResultsReturnPath(params: Record<string, string | string[] | undefin
   return queryString ? `/results?${queryString}` : "/results";
 }
 
+function getMailStatusLabel(status: string) {
+  if (status === "sent") {
+    return "발송완료";
+  }
+
+  if (status === "failed") {
+    return "실패";
+  }
+
+  if (status === "skipped") {
+    return "건너뜀";
+  }
+
+  return status;
+}
+
+function getMailStatusClassName(status: string) {
+  if (status === "sent") {
+    return "statusPill success";
+  }
+
+  if (status === "failed") {
+    return "statusPill danger";
+  }
+
+  if (status === "skipped") {
+    return "statusPill neutral";
+  }
+
+  return "statusPill pending";
+}
+
 export default async function ResultsPage({
   searchParams,
 }: {
@@ -182,6 +214,7 @@ export default async function ResultsPage({
       },
     },
   });
+  const latestMailHistory = mailHistories[0];
   const resultsReturnPath = getResultsReturnPath(params);
 
   return (
@@ -212,10 +245,15 @@ export default async function ResultsPage({
           <strong>{recipients.length}</strong>
         </article>
         <article className="metricTile">
-          <span>포함/제외 키워드</span>
-          <strong>
-            {includeKeywords.length}/{excludeKeywords.length}
+          <span>최근 발송</span>
+          <strong className="metricStatusText">
+            {latestMailHistory ? getMailStatusLabel(latestMailHistory.status) : "이력 없음"}
           </strong>
+          <small>
+            {latestMailHistory
+              ? `${formatDateTime(latestMailHistory.sentAt)} · ${latestMailHistory.recipient}`
+              : "최근 10건 기준"}
+          </small>
         </article>
       </section>
 
@@ -264,8 +302,8 @@ export default async function ResultsPage({
           </div>
           {retryableMailCount > 0 ? (
             <p className="muted compactMuted">
-              이전 발송 실패·건너뜀 이력 {retryableMailCount}건이 있습니다. 현재 일일 리포트 대상은{" "}
-              {dailyReportTargetCount}건입니다.
+              수신자별 재시도 대상 이력 {retryableMailCount}건이 있습니다. 현재 일일 리포트 대상은{" "}
+              {dailyReportTargetCount}건이며, 이미 성공한 수신자는 중복 발송하지 않습니다.
             </p>
           ) : null}
         </article>
@@ -419,7 +457,7 @@ export default async function ResultsPage({
         <div className="panelHeader">
           <div>
             <h2>메일 발송 이력</h2>
-            <p>최근 10건을 표시합니다.</p>
+            <p>최근 10건을 표시합니다. 실패·건너뜀 수신자는 다음 수동/자동 발송에서 다시 시도합니다.</p>
           </div>
         </div>
 
@@ -442,12 +480,8 @@ export default async function ResultsPage({
                     <td>{history.recipient}</td>
                     <td>{history.subject}</td>
                     <td>
-                      <span
-                        className={
-                          history.status === "sent" ? "statusPill success" : "statusPill pending"
-                        }
-                      >
-                        {history.status}
+                      <span className={getMailStatusClassName(history.status)}>
+                        {getMailStatusLabel(history.status)}
                       </span>
                     </td>
                     <td>{history.errorMessage ?? "-"}</td>

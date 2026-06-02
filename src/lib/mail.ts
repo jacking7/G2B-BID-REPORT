@@ -168,7 +168,7 @@ export async function sendPendingReport(
   });
   const subjectPrefix = `[G2B] ${reportWindow.label} 일일 공고 `;
 
-  const [user, recipients, results, alreadySent] = await Promise.all([
+  const [user, recipients, results, sentMailHistories] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, name: true },
@@ -183,7 +183,7 @@ export async function sendPendingReport(
       },
     }),
     getDailyReportResultsForUser(userId, reportWindow),
-    prisma.mailHistory.findFirst({
+    prisma.mailHistory.findMany({
       where: {
         userId,
         status: "sent",
@@ -195,7 +195,7 @@ export async function sendPendingReport(
         },
       },
       select: {
-        id: true,
+        recipient: true,
       },
     }),
   ]);
@@ -208,10 +208,18 @@ export async function sendPendingReport(
     return { success: false, message: "활성 수신자가 없습니다.", sentCount: 0 };
   }
 
-  if (alreadySent) {
+  const sentRecipientEmails = new Set(
+    sentMailHistories.map((history) => history.recipient.toLowerCase()),
+  );
+  const pendingRecipients = recipients.filter(
+    (recipient) => !sentRecipientEmails.has(recipient.email.toLowerCase()),
+  );
+  const alreadySentCount = recipients.length - pendingRecipients.length;
+
+  if (pendingRecipients.length === 0) {
     return {
       success: true,
-      message: `${reportWindow.label} 일일 리포트는 이미 발송됐습니다.`,
+      message: `${reportWindow.label} 일일 리포트는 활성 수신자 ${recipients.length}명에게 이미 발송됐습니다.`,
       sentCount: 0,
     };
   }
@@ -229,7 +237,7 @@ export async function sendPendingReport(
   const config = getMailConfig();
   if (!config) {
     await prisma.mailHistory.createMany({
-      data: recipients.map((recipient) => ({
+      data: pendingRecipients.map((recipient) => ({
         userId,
         recipient: recipient.email,
         subject,
@@ -257,7 +265,7 @@ export async function sendPendingReport(
 
   let sentCount = 0;
 
-  for (const recipient of recipients) {
+  for (const recipient of pendingRecipients) {
     try {
       await transporter.sendMail({
         from: config.from,
@@ -295,9 +303,10 @@ export async function sendPendingReport(
     }
   }
 
-  const allRecipientsSent = sentCount === recipients.length;
+  const allPendingRecipientsSent = sentCount === pendingRecipients.length;
+  const allActiveRecipientsCovered = alreadySentCount + sentCount === recipients.length;
 
-  if (allRecipientsSent) {
+  if (allPendingRecipientsSent && allActiveRecipientsCovered) {
     await prisma.collectedResult.updateMany({
       where: {
         id: {
@@ -311,12 +320,21 @@ export async function sendPendingReport(
     });
   }
 
+  const successMessage =
+    alreadySentCount > 0
+      ? `${sentCount}개 수신자에게 메일을 발송했습니다. 이미 발송된 ${alreadySentCount}명은 건너뛰었습니다.`
+      : `${sentCount}개 수신자에게 메일을 발송했습니다.`;
+  const partialMessage =
+    alreadySentCount > 0
+      ? `${sentCount}/${pendingRecipients.length}명에게만 발송됐습니다. 이미 발송된 ${alreadySentCount}명은 건너뛰었고, 미발송 공고는 그대로 두었습니다.`
+      : `${sentCount}/${pendingRecipients.length}명에게만 발송됐습니다. 미발송 공고는 그대로 두었으니 설정·이력을 확인한 뒤 다시 발송해주세요.`;
+
   return {
-    success: allRecipientsSent,
-    message: allRecipientsSent
-      ? `${sentCount}개 수신자에게 메일을 발송했습니다.`
+    success: allPendingRecipientsSent,
+    message: allPendingRecipientsSent
+      ? successMessage
       : sentCount > 0
-        ? `${sentCount}/${recipients.length}명에게만 발송됐습니다. 미발송 공고는 그대로 두었으니 설정·이력을 확인한 뒤 다시 발송해주세요.`
+        ? partialMessage
         : "메일 발송에 실패했습니다. 이력을 확인해주세요.",
     sentCount,
   };

@@ -497,6 +497,17 @@ a {
   line-height: 1;
 }
 
+.metricTile .metricStatusText {
+  font-size: 20px;
+}
+
+.metricTile small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .authShell,
 .shell,
 .productLoginShell {
@@ -1708,6 +1719,16 @@ a {
 .statusPill.pending {
   background: var(--warning-soft);
   color: var(--warning);
+}
+
+.statusPill.danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.statusPill.neutral {
+  background: var(--panel-soft);
+  color: var(--muted);
 }
 
 .keywordPill {

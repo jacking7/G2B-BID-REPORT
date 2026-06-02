@@ -236,6 +236,9 @@ Send jobs use each user's saved `ScheduleSetting.sendTime` and `timezone` to bui
 the daily report window from the previous send time to the current send time.
 The report includes every notice confirmed in that window, including existing
 notices that matched again and were refreshed into the current result list.
+Daily report duplicate checks are recipient-scoped. A recipient that already
+has a successful send history for the same report window is skipped, while
+failed, skipped, or newly activated recipients remain eligible for retry.
 
 ## Scripts
 
@@ -390,7 +393,7 @@ Recent production events:
 - Confirm `MAIL_FROM` is either a plain address or a valid display-name format such as `G2B-Report <account@gmail.com>`.
 - Empty SMTP settings intentionally create skipped mail history instead of sending.
 - Daily reports are skipped when there are no notices confirmed between the previous configured send time and the current configured send time.
-- A successfully sent daily report is not sent again for the same report date.
+- A successfully sent recipient is not sent again for the same report date, but failed, skipped, or newly activated recipients can receive the same daily report on retry.
 
 ## License
 
