@@ -98,7 +98,7 @@ Use `.env.example` as the public template and keep real values only in the runti
 - `bcryptjs` for password hashing
 - `jose` for signed session cookies
 - `nodemailer` for email delivery
-- `xlsx` for spreadsheet export
+- Built-in XLSX generator for spreadsheet export
 - `node-cron` for optional in-app scheduling
 
 ## App Routes
