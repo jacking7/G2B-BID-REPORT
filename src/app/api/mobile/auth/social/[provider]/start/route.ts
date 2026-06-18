@@ -1,4 +1,9 @@
 import { getSocialProviderLabel, parseSocialProvider } from "@/lib/auth-flows";
+import {
+  checkRateLimit,
+  formatRateLimitMessage,
+  getRequestRateLimitKey,
+} from "@/lib/rate-limit";
 import { createMobileSocialAuthorizationUrl } from "@/lib/social-auth";
 
 export const runtime = "nodejs";
@@ -32,6 +37,17 @@ export async function POST(request: Request, context: MobileOAuthStartContext) {
   const provider = parseSocialProvider(providerValue);
   if (!provider) {
     return jsonError("지원하지 않는 소셜 로그인입니다.", 400);
+  }
+
+  const rateLimit = checkRateLimit(
+    getRequestRateLimitKey(request, "mobile-oauth-start", provider),
+    {
+      limit: 10,
+      windowMs: 15 * 60 * 1000,
+    },
+  );
+  if (!rateLimit.allowed) {
+    return jsonError(formatRateLimitMessage(rateLimit), 429);
   }
 
   const body = (await request.json().catch(() => null)) as { redirectUri?: unknown } | null;

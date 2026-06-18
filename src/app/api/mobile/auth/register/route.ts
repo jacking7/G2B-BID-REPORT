@@ -1,13 +1,20 @@
 import { z } from "zod";
 import { createSessionToken, createUser } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/auth-flows";
+import { strongPasswordSchema } from "@/lib/password-policy";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  formatRateLimitMessage,
+  getRequestRateLimitKey,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const registerSchema = z.object({
   email: z.email("올바른 이메일 주소를 입력해주세요."),
-  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
+  password: strongPasswordSchema,
   name: z
     .string()
     .trim()
@@ -28,9 +35,22 @@ export async function POST(request: Request) {
   }
 
   try {
+    const email = normalizeEmail(validated.data.email);
+    const rateLimit = checkRateLimit(
+      getRequestRateLimitKey(request, "mobile-register", email),
+      {
+        limit: 5,
+        windowMs: 30 * 60 * 1000,
+      },
+    );
+    if (!rateLimit.allowed) {
+      return jsonError(formatRateLimitMessage(rateLimit), 429);
+    }
+
     const userCount = await prisma.user.count();
     const user = await createUser({
       ...validated.data,
+      email,
       role: userCount === 0 ? "admin" : "user",
     });
     const mobileUser = {

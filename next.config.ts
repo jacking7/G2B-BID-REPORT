@@ -42,7 +42,11 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Robots-Tag",
-            value: "noindex, nofollow",
+            value: "noindex, nofollow, noarchive, nosnippet, noimageindex",
+          },
+          {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
           },
           {
             key: "Permissions-Policy",

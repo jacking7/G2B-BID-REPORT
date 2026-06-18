@@ -68,6 +68,24 @@ function escapeXml(value: string) {
     .replace(/'/g, "&apos;");
 }
 
+function neutralizeSpreadsheetFormula(value: string) {
+  const cleaned = value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  return /^[=+\-@]/.test(cleaned.trimStart()) ? `'${cleaned}` : cleaned;
+}
+
+function escapeWorkbookCell(value: string) {
+  return escapeXml(neutralizeSpreadsheetFormula(value));
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function getCellReference(columnIndex: number, rowNumber: number) {
   let columnName = "";
   let index = columnIndex;
@@ -189,7 +207,7 @@ function buildWorksheetXml(rows: WorkbookRow[]) {
       const cells = values
         .map(
           (value, columnIndex) =>
-            `<c r="${getCellReference(columnIndex, rowNumber)}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`,
+            `<c r="${getCellReference(columnIndex, rowNumber)}" t="inlineStr"><is><t xml:space="preserve">${escapeWorkbookCell(value)}</t></is></c>`,
         )
         .join("");
 
@@ -274,9 +292,9 @@ export function buildReportHtml(input: {
     .map(
       (result) => `
         <tr>
-          <td style="padding:8px;border:1px solid #d7e0ea;">${result.matchedKeyword ?? "-"}</td>
-          <td style="padding:8px;border:1px solid #d7e0ea;">${result.bidNotice.title}</td>
-          <td style="padding:8px;border:1px solid #d7e0ea;">${result.bidNotice.organization ?? "-"}</td>
+          <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.matchedKeyword ?? "-")}</td>
+          <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.bidNotice.title)}</td>
+          <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.bidNotice.organization ?? "-")}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${formatDateTime(result.bidNotice.noticeDate)}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${formatDateTime(result.bidNotice.closeDate)}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${formatCurrency(result.bidNotice.baseAmount)}</td>
@@ -287,8 +305,8 @@ export function buildReportHtml(input: {
 
   return `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;">
-      <h2>${input.title ?? "나라장터 공고 리포트"}</h2>
-      <p>${input.summary ?? `${userName}님 기준 확인 공고 ${results.length}건입니다.`}</p>
+      <h2>${escapeHtml(input.title ?? "나라장터 공고 리포트")}</h2>
+      <p>${escapeHtml(input.summary ?? `${userName}님 기준 확인 공고 ${results.length}건입니다.`)}</p>
       <table style="border-collapse:collapse;width:100%;margin-top:16px;">
         <thead>
           <tr>

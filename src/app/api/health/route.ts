@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+function isProduction() {
+  return process.env.NODE_ENV === "production";
+}
+
 export async function GET(request: Request) {
   try {
     await prisma.user.count();
@@ -40,9 +44,10 @@ export async function GET(request: Request) {
       return Response.json(
         {
           ok: false,
-          database: "schema-missing",
-          message:
-            "DB 테이블이 아직 없습니다. `npm run db:migrate`로 Prisma 마이그레이션을 먼저 실행해주세요.",
+          database: isProduction() ? "unavailable" : "schema-missing",
+          message: isProduction()
+            ? "상태 확인 중 오류가 발생했습니다."
+            : "DB 테이블이 아직 없습니다. `npm run db:migrate`로 Prisma 마이그레이션을 먼저 실행해주세요.",
           checkedAt: new Date().toISOString(),
         },
         { status: 503 },
@@ -53,7 +58,11 @@ export async function GET(request: Request) {
       {
         ok: false,
         database: "error",
-        message: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
+        message: isProduction()
+          ? "상태 확인 중 오류가 발생했습니다."
+          : error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.",
         checkedAt: new Date().toISOString(),
       },
       { status: 500 },

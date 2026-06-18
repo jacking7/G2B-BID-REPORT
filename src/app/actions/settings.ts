@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { deleteSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { splitKeywordInput } from "@/lib/keywords";
+import { strongPasswordSchema } from "@/lib/password-policy";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  formatRateLimitMessage,
+  resetRateLimit,
+} from "@/lib/rate-limit";
 
 export type KeywordActionState = {
   message?: string;
@@ -62,7 +68,7 @@ const scheduleActiveSchema = z.object({
 const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
-    newPassword: z.string().min(8, "새 비밀번호는 8자 이상이어야 합니다."),
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string().min(1, "새 비밀번호 확인을 입력해주세요."),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -379,6 +385,18 @@ export async function changePasswordAction(
   }
 
   const { currentPassword, newPassword } = validated.data;
+  const rateLimitKey = `settings-change-password:${user.id}`;
+  const rateLimit = checkRateLimit(rateLimitKey, {
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return {
+      message: formatRateLimitMessage(rateLimit),
+      success: false,
+    };
+  }
+
   const currentPasswordValid = await verifyPassword(currentPassword, account.passwordHash);
 
   if (!currentPasswordValid) {
@@ -417,6 +435,7 @@ export async function changePasswordAction(
     }),
   ]);
 
+  resetRateLimit(rateLimitKey);
   revalidatePath("/settings");
 
   return {
@@ -457,6 +476,18 @@ export async function withdrawUserAction(
     redirect("/login");
   }
 
+  const rateLimitKey = `settings-withdraw:${user.id}`;
+  const rateLimit = checkRateLimit(rateLimitKey, {
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return {
+      message: formatRateLimitMessage(rateLimit),
+      success: false,
+    };
+  }
+
   const currentPasswordValid = await verifyPassword(
     validated.data.currentPassword,
     account.passwordHash,
@@ -469,6 +500,7 @@ export async function withdrawUserAction(
     };
   }
 
+  resetRateLimit(rateLimitKey);
   await prisma.user.delete({
     where: {
       id: user.id,

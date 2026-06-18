@@ -8,6 +8,10 @@ import { prisma } from "@/lib/prisma";
 
 const sessionCookieName = "g2b_session";
 const devSessionSecret = "dev-only-auth-secret-change-me";
+const passwordSaltRounds = 12;
+const allowedRoles = ["admin", "user"] as const;
+
+export type UserRole = (typeof allowedRoles)[number];
 
 function shouldUseSecureCookies() {
   const configured = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
@@ -61,11 +65,18 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string | null;
+  role: UserRole;
+};
+
+type SessionUserInput = {
+  id: string;
+  email: string;
+  name: string | null;
   role: string;
 };
 
 export async function hashPassword(password: string) {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, passwordSaltRounds);
 }
 
 export async function verifyPassword(password: string, passwordHash: string) {
@@ -76,7 +87,7 @@ export async function createUser(input: {
   email: string;
   password: string;
   name?: string;
-  role?: string;
+  role?: UserRole;
 }) {
   const passwordHash = await hashPassword(input.password);
 
@@ -113,6 +124,27 @@ export async function findUserByEmail(email: string) {
   });
 }
 
+function isAllowedRole(role: string | null | undefined): role is UserRole {
+  return allowedRoles.includes(role as UserRole);
+}
+
+function toAuthUser(user: {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+}): AuthUser | null {
+  if (!isAllowedRole(user.role)) {
+    return null;
+  }
+
+  return user as AuthUser;
+}
+
+export function hasRole(user: AuthUser, roles: readonly UserRole[]) {
+  return roles.includes(user.role);
+}
+
 async function encryptSession(payload: SessionPayload) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
@@ -137,12 +169,17 @@ async function decryptSession(token?: string) {
   }
 }
 
-export async function createSessionToken(user: AuthUser) {
+export async function createSessionToken(user: SessionUserInput) {
+  const authUser = toAuthUser(user);
+  if (!authUser) {
+    throw new Error("허용되지 않은 사용자 권한입니다.");
+  }
+
   return encryptSession({
-    userId: user.id,
-    email: user.email,
-    role: user.role,
-    name: user.name,
+    userId: authUser.id,
+    email: authUser.email,
+    role: authUser.role,
+    name: authUser.name,
   });
 }
 
@@ -153,7 +190,7 @@ export async function getUserFromSessionToken(token?: string): Promise<AuthUser 
     return null;
   }
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
       id: true,
@@ -162,11 +199,18 @@ export async function getUserFromSessionToken(token?: string): Promise<AuthUser 
       role: true,
     },
   });
+
+  return user ? toAuthUser(user) : null;
 }
 
-export async function createSession(user: AuthUser) {
+export async function createSession(user: SessionUserInput) {
+  const authUser = toAuthUser(user);
+  if (!authUser) {
+    throw new Error("허용되지 않은 사용자 권한입니다.");
+  }
+
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const token = await createSessionToken(user);
+  const token = await createSessionToken(authUser);
 
   const cookieStore = await cookies();
   cookieStore.set(sessionCookieName, token, {
@@ -196,7 +240,7 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
     return null;
   }
 
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: {
       id: true,
@@ -205,14 +249,24 @@ export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
       role: true,
     },
   });
+
+  return user ? toAuthUser(user) : null;
 });
 
-export async function requireUser() {
+export async function requireRole(roles: readonly UserRole[]) {
   const user = await getCurrentUser();
 
-  if (!user) {
+  if (!user || !hasRole(user, roles)) {
     redirect("/login");
   }
 
   return user;
+}
+
+export async function requireUser() {
+  return requireRole(allowedRoles);
+}
+
+export async function requireAdmin() {
+  return requireRole(["admin"]);
 }

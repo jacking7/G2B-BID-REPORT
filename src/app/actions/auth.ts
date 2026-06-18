@@ -25,7 +25,13 @@ import {
   sendEmailVerificationCode,
   sendPasswordResetLink,
 } from "@/lib/mail";
+import { strongPasswordSchema } from "@/lib/password-policy";
 import { prisma } from "@/lib/prisma";
+import {
+  checkRateLimit,
+  formatRateLimitMessage,
+  resetRateLimit,
+} from "@/lib/rate-limit";
 
 export type AuthActionState = {
   errors?: {
@@ -46,7 +52,9 @@ const loginSchema = z.object({
   password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
 });
 
-const registerSchema = loginSchema.extend({
+const registerSchema = z.object({
+  email: z.email("올바른 이메일 주소를 입력해주세요."),
+  password: strongPasswordSchema,
   name: z
     .string()
     .trim()
@@ -72,8 +80,12 @@ const accountLookupSchema = z.object({
 
 const passwordResetSchema = z.object({
   token: z.string().min(1, "재설정 토큰이 없습니다."),
-  password: z.string().min(8, "비밀번호는 8자 이상이어야 합니다."),
+  password: strongPasswordSchema,
 });
+
+const authLoginRateLimit = { limit: 5, windowMs: 15 * 60 * 1000 };
+const authSensitiveRateLimit = { limit: 5, windowMs: 60 * 60 * 1000 };
+const authRegisterRateLimit = { limit: 5, windowMs: 30 * 60 * 1000 };
 
 export async function loginAction(
   _state: AuthActionState,
@@ -91,7 +103,17 @@ export async function loginAction(
     };
   }
 
-  const { email, password } = validated.data;
+  const { password } = validated.data;
+  const email = normalizeEmail(validated.data.email);
+  const rateLimitKey = `web-login:${email}`;
+  const rateLimit = checkRateLimit(rateLimitKey, authLoginRateLimit);
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: formatRateLimitMessage(rateLimit),
+    };
+  }
+
   const user = await findUserByEmail(email);
 
   if (!user) {
@@ -107,6 +129,8 @@ export async function loginAction(
       message: "이메일 또는 비밀번호가 올바르지 않습니다.",
     };
   }
+
+  resetRateLimit(rateLimitKey);
 
   await createSession({
     id: user.id,
@@ -138,6 +162,17 @@ export async function registerAction(
 
   try {
     const normalizedEmail = normalizeEmail(validated.data.email);
+    const rateLimit = checkRateLimit(
+      `web-register:${normalizedEmail}`,
+      authRegisterRateLimit,
+    );
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        message: formatRateLimitMessage(rateLimit),
+      };
+    }
+
     const existingUser = await findUserByEmail(normalizedEmail);
     if (existingUser) {
       return {
@@ -203,8 +238,20 @@ export async function requestEmailVerificationAction(
     };
   }
 
+  const normalizedEmail = normalizeEmail(validated.data.email);
+  const rateLimit = checkRateLimit(
+    `web-email-verification:${normalizedEmail}`,
+    authSensitiveRateLimit,
+  );
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: formatRateLimitMessage(rateLimit),
+    };
+  }
+
   const { email, code } = await createEmailVerificationCode({
-    email: validated.data.email,
+    email: normalizedEmail,
   });
   const result = await sendEmailVerificationCode({
     email,
@@ -217,7 +264,7 @@ export async function requestEmailVerificationAction(
     message: result.sent
       ? "인증번호를 이메일로 보냈습니다."
       : process.env.NODE_ENV === "production"
-        ? "SMTP 설정을 확인해주세요. 인증번호를 발송하지 못했습니다."
+        ? "인증번호를 발송하지 못했습니다. 잠시 후 다시 시도해주세요."
         : `개발 환경 인증번호: ${code}`,
   };
 }
@@ -245,7 +292,18 @@ export async function requestPasswordResetAction(
     };
   }
 
-  const { email } = validated.data;
+  const email = normalizeEmail(validated.data.email);
+  const rateLimit = checkRateLimit(
+    `web-password-reset:${email}`,
+    authSensitiveRateLimit,
+  );
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: formatRateLimitMessage(rateLimit),
+    };
+  }
+
   const user = await findUserByEmail(email);
   let devResetUrl: string | undefined;
 
@@ -299,6 +357,17 @@ export async function requestAccountLookupAction(
   }
 
   const email = normalizeEmail(validated.data.lookupEmail);
+  const rateLimit = checkRateLimit(
+    `web-account-lookup:${email}`,
+    authSensitiveRateLimit,
+  );
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: formatRateLimitMessage(rateLimit),
+    };
+  }
+
   const user = await findUserByEmail(email);
 
   if (user) {
@@ -331,6 +400,17 @@ export async function resetPasswordAction(
   }
 
   const { token, password } = validated.data;
+  const rateLimit = checkRateLimit(
+    `web-reset-token:${hashToken(token)}`,
+    authSensitiveRateLimit,
+  );
+  if (!rateLimit.allowed) {
+    return {
+      success: false,
+      message: formatRateLimitMessage(rateLimit),
+    };
+  }
+
   const tokenHash = hashToken(token);
   const resetToken = await prisma.passwordResetToken.findUnique({
     where: {
@@ -370,6 +450,8 @@ export async function resetPasswordAction(
       },
     }),
   ]);
+
+  resetRateLimit(`web-reset-token:${tokenHash}`);
 
   return {
     success: true,

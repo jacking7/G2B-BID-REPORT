@@ -242,13 +242,13 @@ export async function sendPendingReport(
         recipient: recipient.email,
         subject,
         status: "skipped",
-        errorMessage: "SMTP 설정이 없어 실제 발송을 건너뛰었습니다.",
+        errorMessage: "메일 발송 설정이 완료되지 않아 실제 발송을 건너뛰었습니다.",
       })),
     });
 
     return {
       success: false,
-      message: "SMTP 설정이 없어 실제 발송은 건너뛰고 이력만 남겼습니다.",
+      message: "메일 발송 설정이 완료되지 않아 이력만 남겼습니다.",
       sentCount: 0,
     };
   }

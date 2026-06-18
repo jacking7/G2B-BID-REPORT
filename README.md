@@ -73,6 +73,8 @@ Last verified production deployment:
 - Light and Dracula-style dark themes with icon-only toggle controls
 - In-app operator manual at `/manual`
 - Legal footer with privacy, service notice, MIT license, and GitHub contact links
+- Security defaults for rate-limited auth, explicit role checks, hardened cookies,
+  crawler blocking, noindex headers, and spreadsheet formula injection defense
 
 ## Public-Safe Repository Notes
 
@@ -129,6 +131,19 @@ The mobile dashboard follows the same result visibility policy as the web consol
 repeat-matched existing notices refresh their confirmation time, appear in the
 `todayConfirmed` metric, and expose `confirmedAt` while keeping `collectedAt`
 for compatibility.
+
+## Security Baseline
+
+- Login, registration, OAuth start, email verification, account lookup, password reset, password change, and withdrawal attempts are rate-limited.
+- User sessions are signed cookies with `HttpOnly`, production `Secure`, and `SameSite=Lax`.
+- Application roles are explicitly constrained to `admin` and `user` before protected actions proceed.
+- Passwords are stored only as bcrypt salted hashes; new or changed passwords must satisfy the strong password policy.
+- Sensitive session/auth data is not stored in `localStorage`; only UI preferences such as theme/sidebar state use browser storage.
+- Database access uses Prisma ORM bindings; do not add concatenated raw SQL.
+- Excel export neutralizes spreadsheet formula injection for values starting with `=`, `+`, `-`, `@`, or control line prefixes.
+- Public crawler exposure is blocked with `/robots.txt`, `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex`, and known search/AI crawler UA blocking in the proxy.
+- Production health/error responses avoid stack traces, debug payloads, framework banners, and exact server version disclosure.
+- nginx deployments must keep `server_tokens off;` and custom error pages that preserve the original status code.
 
 ## Quick Start
 

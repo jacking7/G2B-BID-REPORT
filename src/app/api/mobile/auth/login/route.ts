@@ -1,5 +1,12 @@
 import { z } from "zod";
 import { createSessionToken, findUserByEmail, verifyPassword } from "@/lib/auth";
+import { normalizeEmail } from "@/lib/auth-flows";
+import {
+  checkRateLimit,
+  formatRateLimitMessage,
+  getRequestRateLimitKey,
+  resetRateLimit,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +28,17 @@ export async function POST(request: Request) {
     return jsonError("이메일과 비밀번호를 다시 확인해주세요.", 400);
   }
 
-  const { email, password } = validated.data;
+  const { password } = validated.data;
+  const email = normalizeEmail(validated.data.email);
+  const rateLimitKey = getRequestRateLimitKey(request, "mobile-login", email);
+  const rateLimit = checkRateLimit(rateLimitKey, {
+    limit: 5,
+    windowMs: 15 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return jsonError(formatRateLimitMessage(rateLimit), 429);
+  }
+
   const user = await findUserByEmail(email);
 
   if (!user) {
@@ -32,6 +49,8 @@ export async function POST(request: Request) {
   if (!isValid) {
     return jsonError("이메일 또는 비밀번호가 올바르지 않습니다.", 401);
   }
+
+  resetRateLimit(rateLimitKey);
 
   const mobileUser = {
     id: user.id,

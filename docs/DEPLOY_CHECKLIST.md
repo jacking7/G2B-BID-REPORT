@@ -51,3 +51,27 @@ crontab 예시:
 - `INTERNAL_JOB_TOKEN`은 충분히 긴 랜덤 문자열 사용
 - 외부 공개 시 HTTPS 뒤에 두기
 - 장기적으로는 SQLite 대신 Postgres 고려
+
+## 6. 보안 점검
+- 로그인, 소셜 로그인 시작, 인증번호/비밀번호 재설정 요청에 rate limit 적용 확인
+- 비밀번호는 bcrypt salted hash로만 저장되고 신규/변경 비밀번호는 강도 정책을 통과해야 함
+- 세션 쿠키는 운영 HTTPS에서 `HttpOnly`, `Secure`, `SameSite=Lax` 확인
+- 인증 토큰, 세션, 민감 사용자 데이터는 `localStorage`에 저장하지 않음
+- DB 접근은 Prisma ORM 바인딩을 사용하고 raw SQL 문자열 조합 금지
+- Excel/CSV류 export는 `=`, `+`, `-`, `@` 시작값을 수식으로 실행하지 않도록 중립화
+- `/robots.txt`는 전체 차단, 알려진 AI/search crawler UA는 프록시에서 403 차단
+- 모든 응답에 `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` 확인
+- 운영 health/API 오류 응답은 stack trace, framework debug, server version을 노출하지 않음
+- nginx 사용 시 `server_tokens off;` 설정
+- nginx error page는 커스텀 페이지를 사용하되 `404`, `500`, `502`, `503`, `504` 상태코드를 유지
+- 보안 관련 변경 후 `npm run test`, `npm run build`, `/robots.txt`, 헤더, crawler 403 smoke 확인
+
+nginx 예시:
+
+```nginx
+server_tokens off;
+proxy_hide_header X-Powered-By;
+
+error_page 404 /404.html;
+error_page 500 502 503 504 /50x.html;
+```
