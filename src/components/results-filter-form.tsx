@@ -1,3 +1,5 @@
+import { appPath } from "@/lib/app-paths";
+
 type ResultsFilterFormProps = {
   initialQuery: string;
   initialStatus: string;
@@ -60,10 +62,13 @@ export function ResultsFilterForm({
         <button type="submit" className="primaryButton">
           필터 적용
         </button>
-        <a href={`/results?from=${today}&to=${today}`} className="secondaryButton linkButton">
+        <a
+          href={appPath(`/results?from=${today}&to=${today}`)}
+          className="secondaryButton linkButton"
+        >
           오늘 기준
         </a>
-        <a href="/results" className="ghostButton linkButton">
+        <a href={appPath("/results")} className="ghostButton linkButton">
           초기화
         </a>
       </div>

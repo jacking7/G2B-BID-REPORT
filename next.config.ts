@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { appBasePath } from "./src/lib/app-paths";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -15,9 +16,74 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  basePath: appBasePath,
   poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,
+  },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: `${appBasePath}/login`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/login",
+        destination: `${appBasePath}/login`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/robots.txt",
+        destination: `${appBasePath}/robots.txt`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/reset-password/:path*",
+        destination: `${appBasePath}/reset-password/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/settings/:path*",
+        destination: `${appBasePath}/settings/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/results/:path*",
+        destination: `${appBasePath}/results/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/manual/:path*",
+        destination: `${appBasePath}/manual/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/privacy/:path*",
+        destination: `${appBasePath}/privacy/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/terms/:path*",
+        destination: `${appBasePath}/terms/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: "/api/:path*",
+        destination: `${appBasePath}/api/:path*`,
+        basePath: false,
+        permanent: false,
+      },
+    ];
   },
   async headers() {
     return [

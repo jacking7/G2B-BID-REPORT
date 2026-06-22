@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MailActionState } from "@/app/actions/bids";
+import { appPath } from "@/lib/app-paths";
 
 type ManualActionsProps = {
   sendAction: (state: MailActionState) => Promise<MailActionState>;
@@ -52,7 +53,7 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
   }, [progress]);
 
   const loadStatus = useCallback(async () => {
-    const response = await fetch("/api/collection/status", { cache: "no-store" });
+    const response = await fetch(appPath("/api/collection/status"), { cache: "no-store" });
     const data = (await response.json()) as { ok: boolean; job?: CollectionJobSnapshot; message?: string };
 
     if (!response.ok || !data.ok || !data.job) {
@@ -99,7 +100,7 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
     setCollectError(null);
 
     try {
-      const response = await fetch("/api/collection/start", { method: "POST" });
+      const response = await fetch(appPath("/api/collection/start"), { method: "POST" });
       const data = (await response.json()) as { ok: boolean; job?: CollectionJobSnapshot; message?: string };
 
       if (!response.ok || !data.ok || !data.job) {
@@ -118,7 +119,7 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
     setStopping(true);
 
     try {
-      const response = await fetch("/api/collection/cancel", { method: "POST" });
+      const response = await fetch(appPath("/api/collection/cancel"), { method: "POST" });
       const data = (await response.json()) as { ok: boolean; job?: CollectionJobSnapshot; message?: string };
 
       if (!response.ok || !data.ok || !data.job) {

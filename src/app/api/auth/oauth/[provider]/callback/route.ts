@@ -1,4 +1,4 @@
-import { getRequestBaseUrl, parseSocialProvider } from "@/lib/auth-flows";
+import { getRequestAppUrl, parseSocialProvider } from "@/lib/auth-flows";
 import { completeSocialLogin } from "@/lib/social-auth";
 
 export const runtime = "nodejs";
@@ -11,13 +11,13 @@ type OAuthRouteContext = {
 };
 
 async function redirectToLogin(message: string) {
-  const url = new URL("/login", await getRequestBaseUrl());
+  const url = new URL(await getRequestAppUrl("/login"));
   url.searchParams.set("oauthError", message);
   return Response.redirect(url);
 }
 
 async function redirectToSettings() {
-  return Response.redirect(new URL("/settings", await getRequestBaseUrl()));
+  return Response.redirect(await getRequestAppUrl("/settings"));
 }
 
 export async function GET(request: Request, context: OAuthRouteContext) {

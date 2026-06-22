@@ -9,6 +9,7 @@ import {
 import { AuthAccessPanel } from "@/components/auth-access-panel";
 import { LegalFooter } from "@/components/legal-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { appPath } from "@/lib/app-paths";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -20,7 +21,7 @@ export default async function LoginPage({
   const user = await getCurrentUser();
 
   if (user) {
-    redirect("/settings");
+    redirect(appPath("/settings"));
   }
 
   const params = (await searchParams) ?? {};

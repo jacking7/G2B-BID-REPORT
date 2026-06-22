@@ -7,11 +7,12 @@ import {
   createEmailVerificationCode,
   createSecretToken,
   emailVerificationExpiresMinutes,
-  getRequestBaseUrl,
+  getRequestAppUrl,
   hashToken,
   normalizeEmail,
   passwordResetExpiresMinutes,
 } from "@/lib/auth-flows";
+import { appPath } from "@/lib/app-paths";
 import {
   createSession,
   createUser,
@@ -139,7 +140,7 @@ export async function loginAction(
     role: user.role,
   });
 
-  redirect("/settings");
+  redirect(appPath("/settings"));
 }
 
 export async function registerAction(
@@ -220,7 +221,7 @@ export async function registerAction(
     };
   }
 
-  redirect("/settings");
+  redirect(appPath("/settings"));
 }
 
 export async function requestEmailVerificationAction(
@@ -310,8 +311,7 @@ export async function requestPasswordResetAction(
   if (user) {
     const token = createSecretToken();
     const tokenHash = hashToken(token);
-    const baseUrl = await getRequestBaseUrl();
-    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+    const resetUrl = await getRequestAppUrl(`/reset-password?token=${token}`);
     devResetUrl = resetUrl;
 
     await prisma.passwordResetToken.create({
@@ -461,5 +461,5 @@ export async function resetPasswordAction(
 
 export async function logoutAction() {
   await deleteSession();
-  redirect("/login");
+  redirect(appPath("/login"));
 }

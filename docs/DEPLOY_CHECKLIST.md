@@ -19,12 +19,12 @@ npm run build
 ```
 
 ## 3. 앱 기능 확인
-- `/login`에서 관리자 계정 생성 또는 로그인
-- `/settings`에서 포함 키워드, 제외 키워드, 수신자, 스케줄 저장
-- `/results`에서 실제 수집 실행
+- `/g2breport/login`에서 관리자 계정 생성 또는 로그인
+- `/g2breport/settings`에서 포함 키워드, 제외 키워드, 수신자, 스케줄 저장
+- `/g2breport/results`에서 실제 수집 실행
 - 결과 필터, Excel 다운로드 확인
 - 메일 발송 또는 재시도 버튼 확인
-- `/api/health` 응답 확인
+- `/g2breport/api/health` 응답 확인
 
 ## 4. 운영 스케줄 방식 선택
 ### 옵션 A. 앱 내부 스케줄러

@@ -1,4 +1,4 @@
-import { getRequestBaseUrl, getSocialProviderLabel, parseSocialProvider } from "@/lib/auth-flows";
+import { getRequestAppUrl, getSocialProviderLabel, parseSocialProvider } from "@/lib/auth-flows";
 import {
   checkRateLimit,
   formatRateLimitMessage,
@@ -16,7 +16,7 @@ type OAuthRouteContext = {
 };
 
 async function redirectToLogin(message: string) {
-  const url = new URL("/login", await getRequestBaseUrl());
+  const url = new URL(await getRequestAppUrl("/login"));
   url.searchParams.set("oauthError", message);
   return Response.redirect(url);
 }

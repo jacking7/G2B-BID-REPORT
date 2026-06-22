@@ -1,4 +1,4 @@
-import { createSecretToken, getRequestBaseUrl, hashToken, type SocialProvider } from "@/lib/auth-flows";
+import { createSecretToken, getRequestAppUrl, hashToken, type SocialProvider } from "@/lib/auth-flows";
 import { createSession, createSessionToken, hashPassword } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -76,8 +76,7 @@ export async function createSocialAuthorizationUrl(provider: SocialProvider) {
     return null;
   }
 
-  const baseUrl = await getRequestBaseUrl();
-  const redirectUri = `${baseUrl}/api/auth/oauth/${provider}/callback`;
+  const redirectUri = await getRequestAppUrl(`/api/auth/oauth/${provider}/callback`);
   const state = createSecretToken();
   const params = new URLSearchParams({
     response_type: "code",
@@ -111,8 +110,7 @@ export async function createMobileSocialAuthorizationUrl(
     return null;
   }
 
-  const baseUrl = await getRequestBaseUrl();
-  const redirectUri = `${baseUrl}/api/mobile/auth/social/${provider}/callback`;
+  const redirectUri = await getRequestAppUrl(`/api/mobile/auth/social/${provider}/callback`);
   const state = `${createSecretToken()}.${Buffer.from(nativeRedirectUri).toString("base64url")}`;
   const params = new URLSearchParams({
     response_type: "code",

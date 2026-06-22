@@ -1,11 +1,12 @@
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { headers } from "next/headers";
+import { appUrl } from "@/lib/app-paths";
 import { prisma } from "@/lib/prisma";
 
 export const emailVerificationExpiresMinutes = 10;
 export const oauthStateExpiresMinutes = 10;
 export const passwordResetExpiresMinutes = 30;
-const productionBaseUrl = "https://g2b-report.duckdns.org";
+const productionBaseUrl = "https://bca.ai.kr";
 const localHostnames = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0"]);
 
 export type SocialProvider = "google" | "naver" | "kakao";
@@ -159,6 +160,10 @@ export async function getRequestBaseUrl() {
   }
 
   return requestBaseUrl;
+}
+
+export async function getRequestAppUrl(path: string) {
+  return appUrl(await getRequestBaseUrl(), path).toString();
 }
 
 export function getSocialProviderLabel(provider: SocialProvider) {

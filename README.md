@@ -4,7 +4,7 @@
   <a href="https://github.com/jacking7/G2B-BID-REPORT/releases/tag/v0.1.0"><img alt="Release v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-ff79c6?style=for-the-badge&labelColor=44475a"></a>
   <a href="./LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/license-MIT-f1fa8c?style=for-the-badge&labelColor=44475a"></a>
   <a href="https://nodejs.org/"><img alt="Node >=20" src="https://img.shields.io/badge/node-%3E%3D20-50fa7b?style=for-the-badge&logo=node.js&logoColor=white&labelColor=44475a"></a>
-  <a href="https://g2b-report.duckdns.org/"><img alt="Live example online" src="https://img.shields.io/badge/live-online-8be9fd?style=for-the-badge&labelColor=44475a"></a>
+  <a href="https://bca.ai.kr/g2breport/"><img alt="Live example online" src="https://img.shields.io/badge/live-online-8be9fd?style=for-the-badge&labelColor=44475a"></a>
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://g2b-report.duckdns.org/"><strong>Live Site</strong></a>
+  <a href="https://bca.ai.kr/g2breport/"><strong>Live Site</strong></a>
   ·
   <a href="#features">Features</a>
   ·
@@ -30,22 +30,22 @@ The project is built as a small operational MVP: one app, one database, explicit
 Production is published at:
 
 ```text
-https://g2b-report.duckdns.org/
+https://bca.ai.kr/g2breport/
 ```
 
-The root route redirects to `/login`. Public trust and legal surfaces are available without exposing runtime secrets, local database files, or deployment credentials.
+The root route redirects to `/g2breport/login`. Public trust and legal surfaces are available without exposing runtime secrets, local database files, or deployment credentials.
 
 | Public URL | Purpose |
 | --- | --- |
-| `/login` | Operator login and first account bootstrap |
-| `/privacy` | Korean privacy notice for the internal console |
-| `/terms` | Service notice, contact path, license, and responsibility limits |
-| `/api/health` | Basic database health check |
+| `/g2breport/login` | Operator login and first account bootstrap |
+| `/g2breport/privacy` | Korean privacy notice for the internal console |
+| `/g2breport/terms` | Service notice, contact path, license, and responsibility limits |
+| `/g2breport/api/health` | Basic database health check |
 
 Current production smoke target:
 
 ```bash
-curl https://g2b-report.duckdns.org/api/health
+curl https://bca.ai.kr/g2breport/api/health
 ```
 
 Last verified production deployment:
@@ -54,7 +54,7 @@ Last verified production deployment:
 - Git commit: `7e627c099a16df740c270ce95f0af442f52de0ad`
 - Runtime: AWS EC2 + PM2 process `g2b-bid-report`
 - OAuth start routes: Google, Naver, and Kakao return `302` redirects from production
-- Runtime base URL: `https://g2b-report.duckdns.org`
+- Runtime base URL: `https://bca.ai.kr/g2breport`
 
 ## Features
 
@@ -71,7 +71,7 @@ Last verified production deployment:
 - Password reset, password change, and account withdrawal
 - SQLite + Prisma data layer
 - Light and Dracula-style dark themes with icon-only toggle controls
-- In-app operator manual at `/manual`
+- In-app operator manual at `/g2breport/manual`
 - Legal footer with privacy, service notice, MIT license, and GitHub contact links
 - Security defaults for rate-limited auth, explicit role checks, hardened cookies,
   crawler blocking, noindex headers, and spreadsheet formula injection defense
@@ -107,26 +107,26 @@ Use `.env.example` as the public template and keep real values only in the runti
 
 | Route | Purpose |
 | --- | --- |
-| `/login` | Login, first account creation, password reset request |
-| `/reset-password` | Password reset by token |
-| `/settings` | Keywords, recipients, schedule, and account management |
-| `/results` | Manual collection, filters, exports, mail send, status overview |
-| `/manual` | Operator workflow manual |
-| `/privacy` | Privacy notice |
-| `/terms` | Service notice, contact, and license information |
-| `/api/health` | Database health check |
-| `/api/collection/start` | Authenticated manual collection start endpoint |
-| `/api/collection/status` | Authenticated manual collection progress endpoint |
-| `/api/collection/cancel` | Authenticated manual collection cancel endpoint |
-| `/api/jobs/collect` | Authenticated external collection job endpoint |
-| `/api/jobs/send` | Authenticated external mail job endpoint |
-| `/api/mobile/auth/login` | Mobile app email/password login endpoint |
-| `/api/mobile/dashboard` | Mobile app dashboard summary endpoint |
-| `/api/mobile/collection/start` | Mobile app manual collection start endpoint |
-| `/api/mobile/reports/send` | Mobile app daily report send endpoint |
+| `/g2breport/login` | Login, first account creation, password reset request |
+| `/g2breport/reset-password` | Password reset by token |
+| `/g2breport/settings` | Keywords, recipients, schedule, and account management |
+| `/g2breport/results` | Manual collection, filters, exports, mail send, status overview |
+| `/g2breport/manual` | Operator workflow manual |
+| `/g2breport/privacy` | Privacy notice |
+| `/g2breport/terms` | Service notice, contact, and license information |
+| `/g2breport/api/health` | Database health check |
+| `/g2breport/api/collection/start` | Authenticated manual collection start endpoint |
+| `/g2breport/api/collection/status` | Authenticated manual collection progress endpoint |
+| `/g2breport/api/collection/cancel` | Authenticated manual collection cancel endpoint |
+| `/g2breport/api/jobs/collect` | Authenticated external collection job endpoint |
+| `/g2breport/api/jobs/send` | Authenticated external mail job endpoint |
+| `/g2breport/api/mobile/auth/login` | Mobile app email/password login endpoint |
+| `/g2breport/api/mobile/dashboard` | Mobile app dashboard summary endpoint |
+| `/g2breport/api/mobile/collection/start` | Mobile app manual collection start endpoint |
+| `/g2breport/api/mobile/reports/send` | Mobile app daily report send endpoint |
 
 The native mobile app lives in the separate `G2B-BID-REPORT-MOBILE` repository,
-but these `/api/mobile/*` routes are owned and deployed by this server app.
+but these `/g2breport/api/mobile/*` routes are owned and deployed by this server app.
 The mobile dashboard follows the same result visibility policy as the web console:
 repeat-matched existing notices refresh their confirmation time, appear in the
 `todayConfirmed` metric, and expose `confirmedAt` while keeping `collectedAt`
@@ -157,7 +157,7 @@ npm run dev
 Open the local app:
 
 ```text
-http://localhost:3000
+http://localhost:3000/g2breport
 ```
 
 On a fresh database, the login page prompts for the first operator account.
@@ -206,14 +206,14 @@ MAIL_FROM="G2B-Report <your-account@gmail.com>"
 Social login redirect URLs:
 
 ```text
-https://g2b-report.duckdns.org/api/auth/oauth/google/callback
-https://g2b-report.duckdns.org/api/auth/oauth/naver/callback
-https://g2b-report.duckdns.org/api/auth/oauth/kakao/callback
+https://bca.ai.kr/g2breport/api/auth/oauth/google/callback
+https://bca.ai.kr/g2breport/api/auth/oauth/naver/callback
+https://bca.ai.kr/g2breport/api/auth/oauth/kakao/callback
 ```
 
 Production OAuth callbacks are pinned to the public site URL. If a production
 runtime accidentally receives a localhost base URL, the auth flow falls back to
-`https://g2b-report.duckdns.org` instead of generating localhost redirects.
+`https://bca.ai.kr/g2breport` instead of generating localhost redirects.
 
 Social login requests and stores only the email address needed to identify the account.
 Do not enable profile/name/nickname permissions in provider consoles unless the product explicitly needs them later.
@@ -274,8 +274,8 @@ npm run job:send     # Call the external send job endpoint
 External schedulers can trigger collection or sending:
 
 ```text
-POST /api/jobs/collect
-POST /api/jobs/send
+POST /g2breport/api/jobs/collect
+POST /g2breport/api/jobs/send
 ```
 
 Required headers:
@@ -304,7 +304,7 @@ Run for one user:
 Basic database check:
 
 ```bash
-curl http://localhost:3000/api/health
+curl http://localhost:3000/g2breport/api/health
 ```
 
 Example response:
@@ -320,7 +320,7 @@ Example response:
 Detailed health data requires the internal job token:
 
 ```bash
-curl "http://localhost:3000/api/health?detailed=1" \
+curl "http://localhost:3000/g2breport/api/health?detailed=1" \
   -H "Authorization: Bearer <INTERNAL_JOB_TOKEN>"
 ```
 
@@ -332,7 +332,7 @@ curl "http://localhost:3000/api/health?detailed=1" \
 4. Run tests.
 5. Build the app.
 6. Start or restart the process manager.
-7. Check `/api/health`.
+7. Check `/g2breport/api/health`.
 
 Example:
 
@@ -353,23 +353,23 @@ git fetch origin
 git pull --ff-only origin main
 npm run build
 pm2 restart g2b-bid-report --update-env
-curl http://localhost:3000/api/health
+curl http://localhost:3000/g2breport/api/health
 ```
 
 Public post-deploy smoke check:
 
 ```bash
-curl https://g2b-report.duckdns.org/api/health
-curl -I https://g2b-report.duckdns.org/
-curl -I https://g2b-report.duckdns.org/api/auth/oauth/google/start
-curl -I https://g2b-report.duckdns.org/api/auth/oauth/naver/start
-curl -I https://g2b-report.duckdns.org/api/auth/oauth/kakao/start
+curl https://bca.ai.kr/g2breport/api/health
+curl -I https://bca.ai.kr/g2breport/
+curl -I https://bca.ai.kr/g2breport/api/auth/oauth/google/start
+curl -I https://bca.ai.kr/g2breport/api/auth/oauth/naver/start
+curl -I https://bca.ai.kr/g2breport/api/auth/oauth/kakao/start
 ```
 
 Expected behavior:
 
-- `/api/health` returns `{"ok":true,"database":"connected",...}`
-- `/` redirects to `/login`
+- `/g2breport/api/health` returns `{"ok":true,"database":"connected",...}`
+- `/` redirects to `/g2breport/login`
 - OAuth start routes return `302` to each provider with the production callback URL
 - The PM2 process `g2b-bid-report` is `online`
 

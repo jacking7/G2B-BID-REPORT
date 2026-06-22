@@ -3,6 +3,7 @@ import { updateScheduleActiveAction } from "@/app/actions/settings";
 import { AppShell } from "@/components/app-shell";
 import { ManualActions } from "@/components/manual-actions";
 import { ResultsFilterForm } from "@/components/results-filter-form";
+import { appPath } from "@/lib/app-paths";
 import { requireUser } from "@/lib/auth";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { expandKeywordValues } from "@/lib/keywords";
@@ -225,7 +226,7 @@ export default async function ResultsPage({
       description="키워드 기준으로 수집된 나라장터 공고와 메일 발송 상태를 확인합니다."
       actions={
         <>
-          <a href="/api/results/export" className="primaryButton linkButton">
+          <a href={appPath("/api/results/export")} className="primaryButton linkButton">
             Excel 다운로드
           </a>
         </>

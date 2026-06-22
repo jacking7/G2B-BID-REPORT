@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { AuthActionState } from "@/app/actions/auth";
+import { appPath } from "@/lib/app-paths";
 
 type AuthAction = (
   state: AuthActionState,
@@ -25,17 +26,17 @@ const initialState: AuthActionState = {};
 const socialProviders = [
   {
     label: "Google",
-    href: "/api/auth/oauth/google/start",
+    href: appPath("/api/auth/oauth/google/start"),
     className: "socialButton google",
   },
   {
     label: "네이버",
-    href: "/api/auth/oauth/naver/start",
+    href: appPath("/api/auth/oauth/naver/start"),
     className: "socialButton naver",
   },
   {
     label: "카카오",
-    href: "/api/auth/oauth/kakao/start",
+    href: appPath("/api/auth/oauth/kakao/start"),
     className: "socialButton kakao",
   },
 ];
