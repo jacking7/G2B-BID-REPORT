@@ -12,7 +12,6 @@ import {
   normalizeEmail,
   passwordResetExpiresMinutes,
 } from "@/lib/auth-flows";
-import { appPath } from "@/lib/app-paths";
 import {
   createSession,
   createUser,
@@ -140,7 +139,7 @@ export async function loginAction(
     role: user.role,
   });
 
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function registerAction(
@@ -221,7 +220,7 @@ export async function registerAction(
     };
   }
 
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function requestEmailVerificationAction(
@@ -461,5 +460,5 @@ export async function resetPasswordAction(
 
 export async function logoutAction() {
   await deleteSession();
-  redirect(appPath("/login"));
+  redirect("/login");
 }

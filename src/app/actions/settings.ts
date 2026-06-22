@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { appPath, stripAppBasePath } from "@/lib/app-paths";
+import { stripAppBasePath } from "@/lib/app-paths";
 import { deleteSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
 import { splitKeywordInput } from "@/lib/keywords";
 import { strongPasswordSchema } from "@/lib/password-policy";
@@ -145,7 +145,7 @@ export async function addKeywordAction(
   });
 
   revalidatePath("/settings");
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function deleteKeywordAction(formData: FormData) {
@@ -164,7 +164,7 @@ export async function deleteKeywordAction(formData: FormData) {
   });
 
   revalidatePath("/settings");
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function addRecipientAction(
@@ -215,7 +215,7 @@ export async function addRecipientAction(
   });
 
   revalidatePath("/settings");
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function deleteRecipientAction(formData: FormData) {
@@ -234,7 +234,7 @@ export async function deleteRecipientAction(formData: FormData) {
   });
 
   revalidatePath("/settings");
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function saveScheduleAction(
@@ -296,7 +296,7 @@ export async function saveScheduleAction(
   }
 
   revalidatePath("/settings");
-  redirect(appPath("/settings"));
+  redirect("/settings");
 }
 
 export async function updateScheduleActiveAction(formData: FormData) {
@@ -313,8 +313,8 @@ export async function updateScheduleActiveAction(formData: FormData) {
       : null;
   const returnTo =
     normalizedReturnTo?.startsWith("/results")
-      ? appPath(normalizedReturnTo)
-      : appPath("/results");
+      ? normalizedReturnTo
+      : "/results";
 
   if (!validated.success) {
     redirect(returnTo);
@@ -386,7 +386,7 @@ export async function changePasswordAction(
 
   if (!account) {
     await deleteSession();
-    redirect(appPath("/login"));
+    redirect("/login");
   }
 
   const { currentPassword, newPassword } = validated.data;
@@ -478,7 +478,7 @@ export async function withdrawUserAction(
 
   if (!account) {
     await deleteSession();
-    redirect(appPath("/login"));
+    redirect("/login");
   }
 
   const rateLimitKey = `settings-withdraw:${user.id}`;
@@ -513,5 +513,5 @@ export async function withdrawUserAction(
   });
   await deleteSession();
 
-  redirect(appPath("/login"));
+  redirect("/login");
 }

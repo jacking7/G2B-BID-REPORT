@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { SignJWT, jwtVerify } from "jose";
-import { appPath } from "@/lib/app-paths";
 import { prisma } from "@/lib/prisma";
 
 const sessionCookieName = "g2b_session";
@@ -258,7 +257,7 @@ export async function requireRole(roles: readonly UserRole[]) {
   const user = await getCurrentUser();
 
   if (!user || !hasRole(user, roles)) {
-    redirect(appPath("/login"));
+    redirect("/login");
   }
 
   return user;

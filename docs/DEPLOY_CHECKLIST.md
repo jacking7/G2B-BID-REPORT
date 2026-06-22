@@ -60,6 +60,7 @@ crontab 예시:
 - DB 접근은 Prisma ORM 바인딩을 사용하고 raw SQL 문자열 조합 금지
 - Excel/CSV류 export는 `=`, `+`, `-`, `@` 시작값을 수식으로 실행하지 않도록 중립화
 - `/robots.txt`는 전체 차단, 알려진 AI/search crawler UA는 프록시에서 403 차단
+- `/robots.txt`가 n8n 등 다른 upstream HTML로 빠지지 않도록 edge/nginx에서 fallback 라우트보다 먼저 G2B 앱으로 라우팅
 - 모든 응답에 `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` 확인
 - 운영 health/API 오류 응답은 stack trace, framework debug, server version을 노출하지 않음
 - nginx 사용 시 `server_tokens off;` 설정
@@ -71,6 +72,10 @@ nginx 예시:
 ```nginx
 server_tokens off;
 proxy_hide_header X-Powered-By;
+
+location = /robots.txt {
+  proxy_pass http://127.0.0.1:3000;
+}
 
 error_page 404 /404.html;
 error_page 500 502 503 504 /50x.html;

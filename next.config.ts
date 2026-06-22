@@ -17,12 +17,26 @@ const contentSecurityPolicy = [
 
 const nextConfig: NextConfig = {
   basePath: appBasePath,
+  skipProxyUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,
   },
   async redirects() {
     return [
+      {
+        source: `${appBasePath}${appBasePath}`,
+        destination: appBasePath,
+        basePath: false,
+        permanent: false,
+      },
+      {
+        source: `${appBasePath}${appBasePath}/:path*`,
+        destination: `${appBasePath}/:path*`,
+        basePath: false,
+        permanent: false,
+      },
       {
         source: "/",
         destination: `${appBasePath}/login`,
@@ -32,12 +46,6 @@ const nextConfig: NextConfig = {
       {
         source: "/login",
         destination: `${appBasePath}/login`,
-        basePath: false,
-        permanent: false,
-      },
-      {
-        source: "/robots.txt",
-        destination: `${appBasePath}/robots.txt`,
         basePath: false,
         permanent: false,
       },
