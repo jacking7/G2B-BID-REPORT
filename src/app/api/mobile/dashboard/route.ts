@@ -67,6 +67,7 @@ export async function GET(request: Request) {
         createdAt: "asc",
       },
       select: {
+        id: true,
         keyword: true,
         type: true,
       },
@@ -174,6 +175,7 @@ export async function GET(request: Request) {
     settings: {
       includeKeywords,
       excludeKeywords,
+      keywordRules,
       recipients,
       schedule,
     },

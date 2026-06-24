@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 import { appBasePath } from "./src/lib/app-paths";
 
+const scriptSrc = process.env.NODE_ENV === "development"
+  ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+  : "script-src 'self' 'unsafe-inline'";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -10,7 +14,7 @@ const contentSecurityPolicy = [
   "img-src 'self' data:",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  scriptSrc,
   "connect-src 'self'",
   "upgrade-insecure-requests",
 ].join("; ");
@@ -20,9 +24,6 @@ const nextConfig: NextConfig = {
   skipProxyUrlNormalize: true,
   skipTrailingSlashRedirect: true,
   poweredByHeader: false,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   async redirects() {
     return [
       {
@@ -120,6 +121,10 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
+          {
+            key: "Cross-Origin-Resource-Policy",
             value: "same-origin",
           },
           {
