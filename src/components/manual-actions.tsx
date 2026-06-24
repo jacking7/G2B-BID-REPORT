@@ -22,6 +22,7 @@ type CollectionJobSnapshot = {
     total: number;
     keyword?: string;
     endpoint?: string;
+    source?: string;
     scannedCount: number;
     importedCount: number;
     refreshedCount: number;
@@ -171,7 +172,9 @@ export function ManualActions({ sendAction }: ManualActionsProps) {
           <div>
             <strong>{progress?.phase ?? "대기"}</strong>
             <span>
-              {progress?.keyword ? `${progress.keyword} 검색 중` : "공식 나라장터 API 기준"}
+              {progress?.keyword
+                ? `${progress.source ? `${progress.source} · ` : ""}${progress.keyword} 검색 중`
+                : "공식 나라장터 API 기준"}
             </span>
           </div>
           <b>{percent}%</b>

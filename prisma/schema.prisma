@@ -47,6 +47,7 @@ model KeywordRule {
 
 model BidNotice {
   id           String            @id @default(cuid())
+  sourceType   String            @default("bid_notice")
   bidNtceNo    String
   bidNtceOrd   String?
   title        String
@@ -60,7 +61,8 @@ model BidNotice {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
-  @@unique([bidNtceNo, bidNtceOrd])
+  @@unique([sourceType, bidNtceNo, bidNtceOrd])
+  @@index([sourceType])
 }
 
 model CollectedResult {
@@ -79,15 +81,19 @@ model CollectedResult {
 }
 
 model ScheduleSetting {
-  id          String   @id @default(cuid())
-  collectTime String   @default("18:00")
-  sendTime    String   @default("09:00")
-  timezone    String   @default("Asia/Seoul")
-  active      Boolean  @default(true)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  collectTime       String   @default("18:00")
+  sendTime          String   @default("09:00")
+  timezone          String   @default("Asia/Seoul")
+  active            Boolean  @default(true)
+  collectBidNotices Boolean  @default(true)
+  collectPreSpecs   Boolean  @default(false)
+  collectOrderPlans Boolean  @default(false)
+  collectionMode    String   @default("activeToday")
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model MailHistory {

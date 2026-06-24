@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { stripAppBasePath } from "@/lib/app-paths";
 import { deleteSession, hashPassword, requireUser, verifyPassword } from "@/lib/auth";
+import { COLLECTION_MODES } from "@/lib/collection-settings";
 import { splitKeywordInput } from "@/lib/keywords";
 import { strongPasswordSchema } from "@/lib/password-policy";
 import { prisma } from "@/lib/prisma";
@@ -54,12 +55,24 @@ const recipientSchema = z.object({
   email: z.email("올바른 이메일 주소를 입력해주세요."),
 });
 
-const scheduleSchema = z.object({
-  collectTime: z.string().regex(/^\d{2}:\d{2}$/, "수집 시간을 확인해주세요."),
-  sendTime: z.string().regex(/^\d{2}:\d{2}$/, "발송 시간을 확인해주세요."),
-  timezone: z.string().trim().min(1, "시간대를 입력해주세요.").max(50),
-  active: z.boolean(),
-});
+const scheduleSchema = z
+  .object({
+    collectTime: z.string().regex(/^\d{2}:\d{2}$/, "수집 시간을 확인해주세요."),
+    sendTime: z.string().regex(/^\d{2}:\d{2}$/, "발송 시간을 확인해주세요."),
+    timezone: z.string().trim().min(1, "시간대를 입력해주세요.").max(50),
+    active: z.boolean(),
+    collectBidNotices: z.boolean(),
+    collectPreSpecs: z.boolean(),
+    collectOrderPlans: z.boolean(),
+    collectionMode: z.enum(COLLECTION_MODES),
+  })
+  .refine(
+    (data) => data.collectBidNotices || data.collectPreSpecs || data.collectOrderPlans,
+    {
+      path: ["collectBidNotices"],
+      message: "수집 대상을 1개 이상 선택해주세요.",
+    },
+  );
 
 const scheduleActiveSchema = z.object({
   active: z.enum(["true", "false"]),
@@ -248,6 +261,10 @@ export async function saveScheduleAction(
     sendTime: formData.get("sendTime"),
     timezone: formData.get("timezone"),
     active: formData.get("active") === "on",
+    collectBidNotices: formData.get("collectBidNotices") === "on",
+    collectPreSpecs: formData.get("collectPreSpecs") === "on",
+    collectOrderPlans: formData.get("collectOrderPlans") === "on",
+    collectionMode: formData.get("collectionMode"),
   });
 
   if (!validated.success) {
@@ -256,11 +273,22 @@ export async function saveScheduleAction(
       message:
         validated.error.flatten().fieldErrors.collectTime?.[0] ??
         validated.error.flatten().fieldErrors.sendTime?.[0] ??
-        validated.error.flatten().fieldErrors.timezone?.[0],
+        validated.error.flatten().fieldErrors.timezone?.[0] ??
+        validated.error.flatten().fieldErrors.collectBidNotices?.[0] ??
+        validated.error.flatten().fieldErrors.collectionMode?.[0],
     };
   }
 
-  const { collectTime, sendTime, timezone, active } = validated.data;
+  const {
+    collectTime,
+    sendTime,
+    timezone,
+    active,
+    collectBidNotices,
+    collectPreSpecs,
+    collectOrderPlans,
+    collectionMode,
+  } = validated.data;
 
   const existing = await prisma.scheduleSetting.findFirst({
     where: {
@@ -281,6 +309,10 @@ export async function saveScheduleAction(
         sendTime,
         timezone,
         active,
+        collectBidNotices,
+        collectPreSpecs,
+        collectOrderPlans,
+        collectionMode,
       },
     });
   } else {
@@ -290,6 +322,10 @@ export async function saveScheduleAction(
         sendTime,
         timezone,
         active,
+        collectBidNotices,
+        collectPreSpecs,
+        collectOrderPlans,
+        collectionMode,
         userId: user.id,
       },
     });
@@ -346,6 +382,10 @@ export async function updateScheduleActiveAction(formData: FormData) {
         sendTime: "09:00",
         timezone: "Asia/Seoul",
         active,
+        collectBidNotices: true,
+        collectPreSpecs: false,
+        collectOrderPlans: false,
+        collectionMode: "activeToday",
         userId: user.id,
       },
     });

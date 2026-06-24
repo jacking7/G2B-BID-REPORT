@@ -74,6 +74,10 @@ export default async function SettingsPage() {
         sendTime: true,
         timezone: true,
         active: true,
+        collectBidNotices: true,
+        collectPreSpecs: true,
+        collectOrderPlans: true,
+        collectionMode: true,
       },
     }),
   ]);
@@ -95,7 +99,7 @@ export default async function SettingsPage() {
           </div>
           <KeywordManager
             title="포함 키워드"
-            description="공고명, 기관명에 이 키워드가 포함되면 수집 대상으로 봅니다."
+            description="공고명, 품명, 사업명, 기관명에 이 키워드가 포함되면 수집 대상으로 봅니다."
             type="include"
             emptyMessage="등록된 포함 키워드가 없습니다."
             keywords={includeKeywords}

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getCollectionSourceLabel, type CollectionSourceType } from "@/lib/collection-settings";
 import { formatCurrency, formatDateTime, getTodayDateLabel } from "@/lib/format";
 import type { getDailyReportWindow } from "@/lib/report-window";
 
@@ -54,9 +55,11 @@ export async function getDailyReportResultsForUser(userId: string, window: Daily
 type CollectedResultWithNotice = Awaited<ReturnType<typeof getCollectedResultsForUser>>[number];
 
 const ZIP_UTF8_FLAG = 0x0800;
-const XLSX_SHEET_NAME = "수집결과";
-
 type WorkbookRow = Record<string, string>;
+type WorkbookSheet = {
+  name: string;
+  rows: WorkbookRow[];
+};
 
 function escapeXml(value: string) {
   return value
@@ -219,39 +222,69 @@ function buildWorksheetXml(rows: WorkbookRow[]) {
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rowXml}</sheetData></worksheet>`;
 }
 
-function buildXlsxBuffer(rows: WorkbookRow[]) {
-  const worksheetXml = buildWorksheetXml(rows);
+function buildXlsxBuffer(sheets: WorkbookSheet[]) {
+  const workbookSheets = sheets.length > 0 ? sheets : [{ name: "수집결과", rows: [] }];
+  const worksheetFiles = workbookSheets.map((sheet, index) => ({
+    path: `xl/worksheets/sheet${index + 1}.xml`,
+    content: buildWorksheetXml(sheet.rows),
+  }));
+  const sheetXml = workbookSheets
+    .map(
+      (sheet, index) =>
+        `<sheet name="${escapeXml(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`,
+    )
+    .join("");
+  const workbookRelationships = workbookSheets
+    .map(
+      (_, index) =>
+        `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`,
+    )
+    .join("");
+  const worksheetContentTypes = workbookSheets
+    .map(
+      (_, index) =>
+        `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
+    )
+    .join("");
 
   return createZip([
     {
       path: "[Content_Types].xml",
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`,
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${worksheetContentTypes}</Types>`,
     },
     {
       path: "_rels/.rels",
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`,
+    },
+    {
+      path: "docProps/core.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:creator>bca</dc:creator><cp:lastModifiedBy>bca</cp:lastModifiedBy></cp:coreProperties>`,
+    },
+    {
+      path: "docProps/app.xml",
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>G2B Bid Report</Application></Properties>`,
     },
     {
       path: "xl/workbook.xml",
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${escapeXml(XLSX_SHEET_NAME)}" sheetId="1" r:id="rId1"/></sheets></workbook>`,
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheetXml}</sheets></workbook>`,
     },
     {
       path: "xl/_rels/workbook.xml.rels",
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`,
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${workbookRelationships}</Relationships>`,
     },
-    {
-      path: "xl/worksheets/sheet1.xml",
-      content: worksheetXml,
-    },
+    ...worksheetFiles,
   ]);
 }
 
-function buildWorkbookFromResults(results: CollectedResultWithNotice[]) {
-  const rows = results.map((result) => ({
+function buildWorkbookRow(result: CollectedResultWithNotice) {
+  return {
+    카테고리: getCollectionSourceLabel(result.bidNotice.sourceType),
     확인시각: formatDateTime(result.collectedAt),
     발송상태: result.emailedAt ? "발송완료" : "미발송",
     매칭키워드: result.matchedKeyword ?? "-",
@@ -263,10 +296,28 @@ function buildWorkbookFromResults(results: CollectedResultWithNotice[]) {
     마감일: formatDateTime(result.bidNotice.closeDate),
     기초금액: formatCurrency(result.bidNotice.baseAmount),
     상세URL: result.bidNotice.detailUrl ?? "",
-  }));
+  };
+}
+
+function buildWorkbookSheets(results: CollectedResultWithNotice[]) {
+  const sourceOrder: CollectionSourceType[] = ["bid_notice", "pre_spec", "order_plan"];
+  const sheets = sourceOrder
+    .map((sourceType) => ({
+      name: getCollectionSourceLabel(sourceType),
+      rows: results
+        .filter((result) => result.bidNotice.sourceType === sourceType)
+        .map(buildWorkbookRow),
+    }))
+    .filter((sheet) => sheet.rows.length > 0);
+
+  return sheets.length > 0 ? sheets : [{ name: "수집결과", rows: [] }];
+}
+
+function buildWorkbookFromResults(results: CollectedResultWithNotice[]) {
+  const sheets = buildWorkbookSheets(results);
 
   return {
-    buffer: buildXlsxBuffer(rows),
+    buffer: buildXlsxBuffer(sheets),
     fileName: `g2b-results-${getTodayDateLabel()}.xlsx`,
     count: results.length,
   };
@@ -292,6 +343,7 @@ export function buildReportHtml(input: {
     .map(
       (result) => `
         <tr>
+          <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(getCollectionSourceLabel(result.bidNotice.sourceType))}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.matchedKeyword ?? "-")}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.bidNotice.title)}</td>
           <td style="padding:8px;border:1px solid #d7e0ea;">${escapeHtml(result.bidNotice.organization ?? "-")}</td>
@@ -310,6 +362,7 @@ export function buildReportHtml(input: {
       <table style="border-collapse:collapse;width:100%;margin-top:16px;">
         <thead>
           <tr>
+            <th style="padding:8px;border:1px solid #d7e0ea;background:#f8fbff;">카테고리</th>
             <th style="padding:8px;border:1px solid #d7e0ea;background:#f8fbff;">매칭 키워드</th>
             <th style="padding:8px;border:1px solid #d7e0ea;background:#f8fbff;">공고명</th>
             <th style="padding:8px;border:1px solid #d7e0ea;background:#f8fbff;">기관</th>

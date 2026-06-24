@@ -1,4 +1,8 @@
 import { requireMobileApiUser } from "@/app/api/mobile/_auth";
+import {
+  getCollectionModeLabel,
+  getCollectionSourceLabel,
+} from "@/lib/collection-settings";
 import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
 
@@ -93,6 +97,10 @@ export async function GET(request: Request) {
         sendTime: true,
         timezone: true,
         active: true,
+        collectBidNotices: true,
+        collectPreSpecs: true,
+        collectOrderPlans: true,
+        collectionMode: true,
       },
     }),
     prisma.collectedResult.findMany({
@@ -144,6 +152,8 @@ export async function GET(request: Request) {
     ],
     results: results.map((result) => ({
       id: result.id,
+      sourceType: result.bidNotice.sourceType,
+      sourceLabel: getCollectionSourceLabel(result.bidNotice.sourceType),
       bidNtceNo: result.bidNotice.bidNtceNo,
       title: result.bidNotice.title,
       organization: result.bidNotice.organization,
@@ -159,6 +169,7 @@ export async function GET(request: Request) {
       todayMetricKey: "todayConfirmed",
       repeatMatchedResultsRefresh: true,
       repeatMatchedResultsResendMail: false,
+      collectionModeLabel: getCollectionModeLabel(schedule?.collectionMode),
     },
     settings: {
       includeKeywords,

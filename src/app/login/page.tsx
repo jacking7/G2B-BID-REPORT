@@ -37,15 +37,15 @@ export default async function LoginPage({
             <span className="brandMark">G2B</span>
             <div>
               <strong>G2B Bid Report</strong>
-              <span>입찰공고 운영 콘솔</span>
+              <span>나라장터 운영 콘솔</span>
             </div>
           </div>
 
           <div>
             <span className="eyebrow">G2B BID REPORT</span>
-            <h1>나라장터 입찰공고 리포트</h1>
+            <h1>나라장터 공고 리포트</h1>
             <p>
-              키워드 기반 공고 수집, 결과 확인, Excel 다운로드, 메일 발송을 한 곳에서 관리합니다.
+              키워드 기반 입찰공고, 사전규격, 발주계획 수집과 Excel 다운로드, 메일 발송을 한 곳에서 관리합니다.
             </p>
           </div>
 

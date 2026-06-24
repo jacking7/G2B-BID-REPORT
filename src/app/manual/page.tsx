@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const setupSteps = [
   {
     title: "포함 키워드 등록",
-    body: "설정에서 수집할 공고명, 기관명 기준 키워드를 등록합니다. 포함 키워드가 없으면 수집을 실행할 수 없습니다.",
+    body: "설정에서 공고명, 품명, 사업명, 기관명 기준 키워드를 등록합니다. 포함 키워드가 없으면 수집을 실행할 수 없습니다.",
   },
   {
     title: "제외 키워드 정리",
@@ -19,7 +19,7 @@ const setupSteps = [
   },
   {
     title: "스케줄 저장",
-    body: "한국 시간 기준 수집 시간과 발송 시간을 저장하고 자동 실행을 켭니다. 서버 스케줄러가 켜져 있어야 자동화가 동작합니다.",
+    body: "한국 시간 기준 수집 시간, 발송 시간, 수집 대상, 수집 기준을 저장하고 자동 실행을 켭니다. 서버 스케줄러가 켜져 있어야 자동화가 동작합니다.",
   },
 ];
 
@@ -34,7 +34,7 @@ const operationSteps = [
   },
   {
     title: "Excel 다운로드",
-    body: "현재 수집 결과를 업무 공유용 Excel 파일로 내려받습니다. 필터와 무관하게 서버가 제공하는 최신 결과 기준으로 생성됩니다.",
+    body: "현재 수집 결과를 업무 공유용 Excel 파일로 내려받습니다. 카테고리별 시트로 나뉘며 필터와 무관하게 서버가 제공하는 최신 결과 기준으로 생성됩니다.",
   },
   {
     title: "일일 리포트 메일 발송",
@@ -69,7 +69,7 @@ export default async function ManualPage() {
       active="manual"
       user={user}
       title="사용 매뉴얼"
-      description="나라장터 공고 수집, 필터링, Excel 다운로드, 메일 발송까지 운영 흐름을 확인합니다."
+      description="나라장터 입찰공고, 사전규격, 발주계획 수집부터 Excel 다운로드와 메일 발송까지 운영 흐름을 확인합니다."
       actions={
         <>
           <Link href="/settings" className="secondaryButton linkButton">

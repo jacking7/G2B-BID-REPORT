@@ -5,6 +5,10 @@ import { ManualActions } from "@/components/manual-actions";
 import { ResultsFilterForm } from "@/components/results-filter-form";
 import { appPath } from "@/lib/app-paths";
 import { requireUser } from "@/lib/auth";
+import {
+  getCollectionModeLabel,
+  getCollectionSourceLabel,
+} from "@/lib/collection-settings";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { expandKeywordValues } from "@/lib/keywords";
 import { prisma } from "@/lib/prisma";
@@ -202,6 +206,12 @@ export default async function ResultsPage({
     : userScheduleEnabled
       ? "자동 실행"
       : "사용자 OFF";
+  const enabledCollectionSources = [
+    schedule?.collectBidNotices ?? true ? getCollectionSourceLabel("bid_notice") : null,
+    schedule?.collectPreSpecs ? getCollectionSourceLabel("pre_spec") : null,
+    schedule?.collectOrderPlans ? getCollectionSourceLabel("order_plan") : null,
+  ].filter(Boolean);
+  const collectionModeLabel = getCollectionModeLabel(schedule?.collectionMode);
   const dailyReportWindow = getDailyReportWindow({
     timezone: schedule?.timezone,
     sendTime: schedule?.sendTime,
@@ -298,6 +308,22 @@ export default async function ResultsPage({
                 ) : (
                   <em>없음</em>
                 )}
+              </div>
+            </div>
+            <div className="snapshotGroup">
+              <strong>수집 대상</strong>
+              <div className="chipList">
+                {enabledCollectionSources.length > 0 ? (
+                  enabledCollectionSources.map((item) => <span key={item}>{item}</span>)
+                ) : (
+                  <em>없음</em>
+                )}
+              </div>
+            </div>
+            <div className="snapshotGroup">
+              <strong>수집 기준</strong>
+              <div className="chipList">
+                <span>{collectionModeLabel}</span>
               </div>
             </div>
           </div>
@@ -406,6 +432,7 @@ export default async function ResultsPage({
               <thead>
                 <tr>
                   <th>확인시각</th>
+                  <th>카테고리</th>
                   <th>발송상태</th>
                   <th>매칭 키워드</th>
                   <th>공고명</th>
@@ -419,6 +446,11 @@ export default async function ResultsPage({
                 {results.map((result) => (
                   <tr key={result.id}>
                     <td>{formatDateTime(result.collectedAt)}</td>
+                    <td>
+                      <span className="statusPill neutral">
+                        {getCollectionSourceLabel(result.bidNotice.sourceType)}
+                      </span>
+                    </td>
                     <td>
                       <span className={result.emailedAt ? "statusPill success" : "statusPill pending"}>
                         {result.emailedAt ? "발송완료" : "미발송"}
